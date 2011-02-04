@@ -108,6 +108,12 @@ void init_uci_options() {
   schemes[3] = "Zlib-9 (cp3)";
   schemes[4] = "LZMA-5-4k (cp4)";
   Options["GaviotaTbCompression"] = Option(schemes[4], schemes);
+  Options["Update history and killer moves in PV"] = Option(true);
+  Options["Max depth to update history and killers in PV"] = Option(20, 2, 99);
+  Options["Use smooth scaling"] = Option(false);
+  Options["Linear Factor in Centipawns"] = Option(18, -500, 500);
+  Options["Constant Factor in Centipawns"] = Option(310, -1500, 1500);
+  Options["Log Factor in Centipawns"] = Option(20, -5000, 5000);
   Options["Ponder"] = Option(true);
   Options["OwnBook"] = Option(true);
   Options["MultiPV"] = Option(1, 1, 500);

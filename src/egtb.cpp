@@ -44,8 +44,8 @@ namespace
   
   int CompressionScheme;
   
-//  bool Chess960 = Options["UCI_Chess960"].value<bool>();
-	bool Chess960 = false;
+  bool Chess960;
+
   /// Local functions
   std::string trim(const std::string& str);
   int get_compression_scheme_from_string(const std::string& str);
@@ -62,8 +62,8 @@ void init_egtb()
   std::string newTbPaths = Options["GaviotaTbPath"].value<std::string>();
   int newTbSize = Options["GaviotaTbCache"].value<int>();
   int newCompressionScheme = get_compression_scheme_from_string(Options["GaviotaTbCompression"].value<std::string>());
-  
   Chess960 = Options["UCI_Chess960"].value<bool>();
+    
 
   // Check if we need to initialize or reinitialize.
   if (newTbSize != TbSize || newTbPaths != TbPaths || newCompressionScheme != CompressionScheme)

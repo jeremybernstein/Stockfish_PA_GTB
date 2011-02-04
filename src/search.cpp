@@ -258,6 +258,17 @@ namespace {
   bool UseTimeManagement, InfiniteSearch, Pondering, StopOnPonderhit;
   bool FirstRootMove, StopRequest, QuitRequest, AspirationFailLow;
   TimeManager TimeMgr;
+  
+   // Update history and killer moves in PV
+  bool UseHistoryAndKillersInPV;
+  int HkpvMaxDepth;
+  
+  // Smooth scaling
+  bool UseSmoothScaling;
+  double LinearFactor;
+  double ConstantFactor;
+  double LogFactor;
+
 
   // Log file
   bool UseLogFile;
@@ -456,6 +467,12 @@ bool think(Position& pos, bool infinite, bool ponder, int time[], int increment[
   PawnEndgameExtension[0]   = Options["Pawn Endgame Extension (non-PV nodes)"].value<Depth>();
   MateThreatExtension[1]    = Options["Mate Threat Extension (PV nodes)"].value<Depth>();
   MateThreatExtension[0]    = Options["Mate Threat Extension (non-PV nodes)"].value<Depth>();
+  UseHistoryAndKillersInPV  = Options["Update history and killer moves in PV"].value<bool>();
+  HkpvMaxDepth              = Options["Max depth to update history and killers in PV"].value<int>();
+  UseSmoothScaling          = Options["Use smooth scaling"].value<bool>();
+  LinearFactor              = Options["Linear Factor in Centipawns"].value<int>() * 0.01;
+  ConstantFactor            = Options["Constant Factor in Centipawns"].value<int>() * 0.01;
+  LogFactor                 = Options["Log Factor in Centipawns"].value<int>() * 0.01;
   MultiPV                   = Options["MultiPV"].value<int>();
   UseLogFile                = Options["Use Search Log"].value<bool>();
   UseGaviotaTb              = Options["UseGaviotaTb"].value<bool>();
@@ -1115,10 +1132,23 @@ namespace {
 
         // Null move dynamic reduction based on depth
         int R = 3 + (depth >= 5 * ONE_PLY ? depth / 8 : 0);
-
-        // Null move dynamic reduction based on value
-        if (refinedValue - beta > PawnValueMidgame)
+        
+        if (UseSmoothScaling)
+        {
+          // Dann Corbit smooth scaling
+          double delta = refinedValue - beta;
+          delta = Max(delta, 1.0);
+          double ddepth = double(depth);
+          double r = LinearFactor * ddepth + ConstantFactor + log(delta) * LogFactor;
+          r = r > ddepth ? ddepth : r;
+          R = int(r);
+        }
+        else
+        {
+          // Null move dynamic reduction based on value
+          if (refinedValue - beta > PawnValueMidgame)
             R++;
+        }
 
         pos.do_null_move(st);
         (ss+1)->skipNullMove = true;
@@ -1430,7 +1460,8 @@ split_point_start: // At split points actual search starts from here
         TT.store(posKey, value_to_tt(bestValue, ply), vt, depth, move, ss->eval, ss->evalMargin);
 
         // Update killers and history only for non capture moves that fails high
-        if (    (bestValue >= beta || vt == VALUE_TYPE_EXACT)
+        if (   (UseHistoryAndKillersInPV && ply <= HkpvMaxDepth ? bestValue >= beta
+               || vt == VALUE_TYPE_EXACT : bestValue >= beta)
             && !pos.move_is_capture_or_promotion(move))
         {
             update_history(pos, move, depth, movesSearched, moveCount);
