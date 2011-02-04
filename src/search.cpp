@@ -1979,7 +1979,7 @@ split_point_start: // At split points actual search starts from here
 
         //assert(m != move);
 
-        if (!pos.move_is_capture_or_promotion(m))
+        if (m != move && !pos.move_is_capture_or_promotion(m))
             H.failure(pos.piece_on(move_from(m)), move_to(m), depth);
     }
   }
