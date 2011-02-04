@@ -1024,6 +1024,7 @@ void Position::do_capture_move(Key& key, PieceType capture, Color them, Square t
 
     // Update piece count
     pieceCount[them][capture]--;
+    totalPieceCount--;
 
     // Update material hash key
     st->materialKey ^= zobrist[them][capture][pieceCount[them][capture]];
@@ -1232,6 +1233,7 @@ void Position::undo_move(Move m) {
 
       // Update piece count
       pieceCount[them][st->capturedType]++;
+      totalPieceCount++;
 
       // Update piece list, add a new captured piece in capsq square
       index[capsq] = pieceCount[them][st->capturedType] - 1;
@@ -1512,6 +1514,8 @@ void Position::clear() {
   st->epSquare = SQ_NONE;
   startPosPlyCounter = 0;
   nodes = 0;
+  tbhits = 0;
+  totalPieceCount = 0;
 
   memset(byColorBB,  0, sizeof(Bitboard) * 2);
   memset(byTypeBB,   0, sizeof(Bitboard) * 8);
@@ -1562,6 +1566,7 @@ void Position::put_piece(Piece p, Square s) {
   board[s] = p;
   index[s] = pieceCount[c][pt]++;
   pieceList[c][pt][index[s]] = s;
+  totalPieceCount++;
 
   set_bit(&(byTypeBB[pt]), s);
   set_bit(&(byColorBB[c]), s);
@@ -1846,18 +1851,6 @@ void Position::flipped_copy(const Position& pos) {
   st->npMaterial[BLACK] = compute_non_pawn_material(BLACK);
 
   assert(is_ok());
-}
-
-
-// Get the total number of pieces on the board
-// This may end up more efficient some day and simply check an instance field,
-// but I'm too lazy to implement that now
-int Position::total_piece_count() const {
-  int totalPieceCount = 0;
-  for (Color c = WHITE; c <= BLACK; c++)
-    for (PieceType pt = PAWN; pt <= KING; pt++)
-      totalPieceCount += piece_count(c, pt);
-  return totalPieceCount;
 }
 
 
