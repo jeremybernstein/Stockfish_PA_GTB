@@ -717,11 +717,11 @@ namespace {
         && (tbValue = attempt_probe_egtb(pos, true, ONE_PLY, depth, alpha, beta)) != VALUE_NONE)
     {
         if (tbValue == VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
         else if (tbValue == -VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
         else
-            TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
+            TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
 
         return tbValue;
     }
@@ -1043,11 +1043,11 @@ namespace {
         && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
     {
         if (tbValue == VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
         else if (tbValue == -VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
         else
-            TT.store(pos.get_key(), value_to_tt(tbValue, ply), VALUE_TYPE_EXACT, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
+            TT.store(pos.get_key(), value_to_tt(tbValue, ply), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
 
         return tbValue;
     }
