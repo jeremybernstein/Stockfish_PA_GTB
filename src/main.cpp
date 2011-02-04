@@ -55,11 +55,10 @@ extern void benchmark(int argc, char* argv[]);
 int main(int argc, char* argv[]) {
 
   // Disable IO buffering
-  // cout.rdbuf()->pubsetbuf(NULL, 0);
-  // cin.rdbuf()->pubsetbuf(NULL, 0);
+  //cout.rdbuf()->pubsetbuf(NULL, 0);
+  //cin.rdbuf()->pubsetbuf(NULL, 0);
   setvbuf(stdin,NULL,_IONBF,0); // BB+ fix
   setvbuf(stdout,NULL,_IONBF,0);
-  
   // Startup initializations
   init_bitboards();
   init_uci_options();
@@ -101,7 +100,7 @@ int main(int argc, char* argv[]) {
       if (string(argv[1]) != "bench" || argc > 8)
           cout << "Usage: stockfish bench [hash size = 128] [threads = 1] "
                << "[limit = 12] [fen positions file = default] "
-               << "[depth, time, perft or node limited = depth] "
+               << "[depth, time, perft or node limited = depth] " 
 			   << "[MultiPV = 1]"
 			   << endl;
       else

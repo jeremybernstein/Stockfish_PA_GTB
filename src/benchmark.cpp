@@ -95,8 +95,8 @@ static const string BenchmarkPositions[] = {
 	"4rnk1/1pqbppb1/6p1/p6P/7P/1NP2Q2/P1PB4/K2R3R b - - 0 28",
 	"8/p7/1p6/1P3k2/P4bpB/1P1K1p2/7P/8 w - - 0 42",
 	"2rr2k1/1p3ppp/p3b3/qn1p4/3P4/P1P1RB2/1B1Q1PPP/4R1K1 w - - 4 20",
-    "8/k7/8/4Kn2/8/P7/8/1n6 b - - 0 1", 
-    ""
+	"8/k7/8/4Kn2/8/P7/8/1n6 b - - 0 1", 
+  ""
 };
 
 

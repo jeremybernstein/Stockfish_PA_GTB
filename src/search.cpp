@@ -258,19 +258,6 @@ namespace {
   bool UseTimeManagement, InfiniteSearch, Pondering, StopOnPonderhit;
   bool FirstRootMove, StopRequest, QuitRequest, AspirationFailLow;
   TimeManager TimeMgr;
-  
-  // Preserve Hash
-  bool UsePreserveHash;
-
-  // Update history and killer moves in PV
-  bool UseHistoryAndKillersInPV;
-  int HkpvMaxDepth;
-  
-  // Smooth scaling
-  bool UseSmoothScaling;
-  double LinearFactor;
-  double ConstantFactor;
-  double LogFactor;
 
   // Log file
   bool UseLogFile;
@@ -318,7 +305,7 @@ namespace {
   bool value_is_mate(Value value);
   Value value_to_tt(Value v, int ply);
   Value value_from_tt(Value v, int ply);
-  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply);
+  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value beta, int ply);
 
   bool ok_to_use_TT_PV(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply);
   Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta);
@@ -469,13 +456,6 @@ bool think(Position& pos, bool infinite, bool ponder, int time[], int increment[
   PawnEndgameExtension[0]   = Options["Pawn Endgame Extension (non-PV nodes)"].value<Depth>();
   MateThreatExtension[1]    = Options["Mate Threat Extension (PV nodes)"].value<Depth>();
   MateThreatExtension[0]    = Options["Mate Threat Extension (non-PV nodes)"].value<Depth>();
-  UsePreserveHash           = Options["Preserve Analysis"].value<bool>();
-  UseHistoryAndKillersInPV  = Options["Update history and killer moves in PV"].value<bool>();
-  HkpvMaxDepth              = Options["Max depth to update history and killers in PV"].value<int>();
-  UseSmoothScaling          = Options["Use smooth scaling"].value<bool>();
-  LinearFactor              = Options["Linear Factor in Centipawns"].value<int>() * 0.01;
-  ConstantFactor            = Options["Constant Factor in Centipawns"].value<int>() * 0.01;
-  LogFactor                 = Options["Log Factor in Centipawns"].value<int>() * 0.01;
   MultiPV                   = Options["MultiPV"].value<int>();
   UseLogFile                = Options["Use Search Log"].value<bool>();
   UseGaviotaTb              = Options["UseGaviotaTb"].value<bool>();
@@ -737,11 +717,11 @@ namespace {
         && (tbValue = attempt_probe_egtb(pos, true, ONE_PLY, depth, alpha, beta)) != VALUE_NONE)
     {
         if (tbValue == VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
         else if (tbValue == -VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
         else
-            TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
 
         return tbValue;
     }
@@ -1049,10 +1029,8 @@ namespace {
     // * Searching for a mate
     // * Printing of full PV line
     //if (!PvNode && tte && ok_to_use_TT(tte, depth, beta, ply))
-    if (UsePreserveHash && 
-       (tte && (PvNode ? ok_to_use_TT_PV(tte, depth, alpha, beta, ply) 
+    if (tte && (PvNode ? ok_to_use_TT_PV(tte, depth, alpha, beta, ply) 
 	                   : ok_to_use_TT(tte, depth, alpha, beta, ply)))
-	   )
 	{
         TT.refresh(tte);
         ss->bestMove = ttMove; // Can be MOVE_NONE
@@ -1065,11 +1043,11 @@ namespace {
         && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
     {
         if (tbValue == VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
         else if (tbValue == -VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
         else
-            TT.store(pos.get_key(), value_to_tt(tbValue, ply), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            TT.store(pos.get_key(), value_to_tt(tbValue, ply), VALUE_TYPE_EXACT, depth, MOVE_NONE, VALUE_NONE, VALUE_NONE);
 
         return tbValue;
     }
@@ -1137,23 +1115,10 @@ namespace {
 
         // Null move dynamic reduction based on depth
         int R = 3 + (depth >= 5 * ONE_PLY ? depth / 8 : 0);
-        
-        if (UseSmoothScaling)
-        {
-          // Dann Corbit smooth scaling
-          double delta = refinedValue - beta;
-          delta = Max(delta, 1.0);
-          double ddepth = double(depth);
-          double r = LinearFactor * ddepth + ConstantFactor + log(delta) * LogFactor;
-          r = r > ddepth ? ddepth : r;
-          R = int(r);
-        }
-        else
-        {
-          // Null move dynamic reduction based on value
-          if (refinedValue - beta > PawnValueMidgame)
+
+        // Null move dynamic reduction based on value
+        if (refinedValue - beta > PawnValueMidgame)
             R++;
-        }
 
         pos.do_null_move(st);
         (ss+1)->skipNullMove = true;
@@ -1465,8 +1430,7 @@ split_point_start: // At split points actual search starts from here
         TT.store(posKey, value_to_tt(bestValue, ply), vt, depth, move, ss->eval, ss->evalMargin);
 
         // Update killers and history only for non capture moves that fails high
-        if ((UseHistoryAndKillersInPV && ply <= HkpvMaxDepth) &&
-		        (bestValue >= beta || vt == VALUE_TYPE_EXACT)
+        if (    (bestValue >= beta || vt == VALUE_TYPE_EXACT)
             && !pos.move_is_capture_or_promotion(move))
         {
             update_history(pos, move, depth, movesSearched, moveCount);
@@ -1527,10 +1491,8 @@ split_point_start: // At split points actual search starts from here
     ttMove = (tte ? tte->move() : MOVE_NONE);
 
     //if (!PvNode && tte && ok_to_use_TT(tte, ttDepth, beta, ply))
-    if (UsePreserveHash && 
-       (tte && (PvNode ? ok_to_use_TT_PV(tte, ttDepth, alpha, beta, ply) 
+    if (tte && (PvNode ? ok_to_use_TT_PV(tte, ttDepth, alpha, beta, ply) 
 	                   : ok_to_use_TT(tte, ttDepth, alpha, beta, ply)))
-       )
 	{
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ply);
@@ -1957,15 +1919,11 @@ split_point_start: // At split points actual search starts from here
 	    
     Value v = value_from_tt(tte->value(), ply);
 
-    return (   tte->depth() >= depth
-            || v >= Max(value_mate_in(PLY_MAX), beta)
-            || v <= Min(value_mated_in(PLY_MAX), alpha))
-
-           && (
-                  ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
-               || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha)
-               || (tte->type() == VALUE_TYPE_EXACT && v < beta && v > alpha)
-             );
+    return    tte->depth() >= depth
+           && tte->type() == VALUE_TYPE_EXACT
+           && tte->move() != MOVE_NONE
+           && v < beta
+           && v > alpha;
   }
 
 

@@ -59,7 +59,7 @@ inline T Option::value() const {
 template<>
 inline std::string Option::value<std::string>() const {
 
-  assert(type == "string");
+  assert(type == "string" || type == "combo");
   return currentValue;
 }
 

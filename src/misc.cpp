@@ -232,7 +232,15 @@ int data_available()
     INPUT_RECORD rec[256];
     DWORD dw, recCnt;
 
-    if (!inh)
+    // When using Standard C input functions, also check if there
+    // is anything in the buffer. After a call to such functions,
+    // the input waiting in the pipe will be copied to the buffer,
+    // and the call to PeekNamedPipe can indicate no input available.
+    // Setting stdin to unbuffered was not enough. [from Greko]
+    if (stdin->_cnt > 0)
+        return 1;
+
+	if (!inh)
     {
         inh = GetStdHandle(STD_INPUT_HANDLE);
         usePipe = !GetConsoleMode(inh, &dw);

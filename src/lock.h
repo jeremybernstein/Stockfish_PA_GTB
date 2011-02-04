@@ -45,7 +45,6 @@ typedef pthread_cond_t WaitCondition;
 #undef WIN32_LEAN_AND_MEAN
 
 // Default fast and race free locks and condition variables
-#define OLD_LOCKS
 #if !defined(OLD_LOCKS)
 
 typedef SRWLOCK Lock;

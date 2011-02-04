@@ -315,7 +315,6 @@ private:
 
   // Piece counts
   int pieceCount[2][8]; // [color][pieceType]
-  int totalPieceCount;
 
   // Piece lists
   Square pieceList[2][8][16]; // [color][pieceType][index]
@@ -429,10 +428,6 @@ inline Bitboard Position::pieces(PieceType pt1, PieceType pt2, Color c) const {
 
 inline int Position::piece_count(Color c, PieceType pt) const {
   return pieceCount[c][pt];
-}
-
-inline int Position::total_piece_count() const {
-  return totalPieceCount;
 }
 
 inline Square Position::piece_list(Color c, PieceType pt, int idx) const {
