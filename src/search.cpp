@@ -316,9 +316,7 @@ namespace {
   bool value_is_mate(Value value);
   Value value_to_tt(Value v, int ply);
   Value value_from_tt(Value v, int ply);
-  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value beta, int ply);
-
-  bool ok_to_use_TT_PV(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply);
+  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply);
   Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta);
   bool connected_threat(const Position& pos, Move m, Move threat);
   Value refine_eval(const TTEntry* tte, Value defaultEval, int ply);
@@ -1046,9 +1044,8 @@ namespace {
     // * Searching for a mate
     // * Printing of full PV line
     //if (!PvNode && tte && ok_to_use_TT(tte, depth, beta, ply))
-    if (tte && (PvNode ? ok_to_use_TT_PV(tte, depth, alpha, beta, ply) 
-	                   : ok_to_use_TT(tte, depth, alpha, beta, ply)))
-	{
+    if (tte && ok_to_use_TT(tte, depth, alpha, beta, ply))
+    {       
         TT.refresh(tte);
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ply);
@@ -1522,8 +1519,7 @@ split_point_start: // At split points actual search starts from here
     ttMove = (tte ? tte->move() : MOVE_NONE);
 
     //if (!PvNode && tte && ok_to_use_TT(tte, ttDepth, beta, ply))
-    if (tte && (PvNode ? ok_to_use_TT_PV(tte, ttDepth, alpha, beta, ply) 
-	                   : ok_to_use_TT(tte, ttDepth, alpha, beta, ply)))
+    if (tte && ok_to_use_TT(tte, ttDepth, alpha, beta, ply))
 	{
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ply);
@@ -1936,25 +1932,15 @@ split_point_start: // At split points actual search starts from here
 
     Value v = value_from_tt(tte->value(), ply);
 
-    return   (   tte->depth() >= depth
-              || v >= Max(value_mate_in(PLY_MAX), beta)
-              || v <= Min(value_mated_in(PLY_MAX), alpha))
+  return (  tte->depth() >= depth
+          || v >= Max(value_mate_in(PLY_MAX), beta)
+          || v <= Min(value_mated_in(PLY_MAX), alpha))
+
            && (
                   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
                || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha)
                || (tte->type() == VALUE_TYPE_EXACT && v < beta && v > alpha)
              );
-  }
-
-  bool ok_to_use_TT_PV(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply) {
-	    
-    Value v = value_from_tt(tte->value(), ply);
-
-    return    tte->depth() >= depth
-           && tte->type() == VALUE_TYPE_EXACT
-           && tte->move() != MOVE_NONE
-           && v < beta
-           && v > alpha;
   }
 
 
