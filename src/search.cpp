@@ -259,10 +259,6 @@ namespace {
   bool FirstRootMove, StopRequest, QuitRequest, AspirationFailLow;
   TimeManager TimeMgr;
   
-   // Update history and killer moves in PV
-  bool UseHistoryAndKillersInPV;
-  int HkpvMaxDepth;
-  
   // Smooth scaling
   bool UseSmoothScaling;
   double LinearFactor;
@@ -465,8 +461,6 @@ bool think(Position& pos, bool infinite, bool ponder, int time[], int increment[
   PawnEndgameExtension[0]   = Options["Pawn Endgame Extension (non-PV nodes)"].value<Depth>();
   MateThreatExtension[1]    = Options["Mate Threat Extension (PV nodes)"].value<Depth>();
   MateThreatExtension[0]    = Options["Mate Threat Extension (non-PV nodes)"].value<Depth>();
-  UseHistoryAndKillersInPV  = Options["Update history and killer moves in PV"].value<bool>();
-  HkpvMaxDepth              = Options["Max depth to update history and killers in PV"].value<int>();
   UseSmoothScaling          = Options["Use smooth scaling"].value<bool>();
   LinearFactor              = Options["Linear Factor in Centipawns"].value<int>() * 0.01;
   ConstantFactor            = Options["Constant Factor in Centipawns"].value<int>() * 0.01;
@@ -1036,16 +1030,12 @@ namespace {
     tte = TT.retrieve(posKey);
     ttMove = tte ? tte->move() : MOVE_NONE;
 
-    // At PV nodes, we don't use the TT for pruning, but only for move ordering.
-    // This is to avoid problems in the following areas:
-    //
-    // * Repetition draw detection
-    // * Fifty move rule detection
-    // * Searching for a mate
-    // * Printing of full PV line
-    //if (!PvNode && tte && ok_to_use_TT(tte, depth, beta, ply))
-    if (tte && ok_to_use_TT(tte, depth, alpha, beta, ply))
-    {       
+    // At PV nodes we check for exact scores, while at non-PV nodes we check for
+    // and return a fail high/low. Biggest advantage at probing at PV nodes is
+    // to have a smooth experience in analysis mode.
+    if (tte && (PvNode ? tte->depth() >= depth && tte->type() == VALUE_TYPE_EXACT
+                       : ok_to_use_TT(tte, depth, beta, ply)))
+    {
         TT.refresh(tte);
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ply);
@@ -1457,8 +1447,7 @@ split_point_start: // At split points actual search starts from here
         TT.store(posKey, value_to_tt(bestValue, ply), vt, depth, move, ss->eval, ss->evalMargin);
 
         // Update killers and history only for non capture moves that fails high
-        if (   (UseHistoryAndKillersInPV && ply <= HkpvMaxDepth ? bestValue >= beta
-               || vt == VALUE_TYPE_EXACT : bestValue >= beta)
+        if (    bestValue >= beta
             && !pos.move_is_capture_or_promotion(move))
         {
             update_history(pos, move, depth, movesSearched, moveCount);
@@ -1518,9 +1507,8 @@ split_point_start: // At split points actual search starts from here
     tte = TT.retrieve(pos.get_key());
     ttMove = (tte ? tte->move() : MOVE_NONE);
 
-    //if (!PvNode && tte && ok_to_use_TT(tte, ttDepth, beta, ply))
-    if (tte && ok_to_use_TT(tte, ttDepth, alpha, beta, ply))
-	{
+    if (!PvNode && tte && ok_to_use_TT(tte, ttDepth, beta, ply))
+    {
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ply);
     }
@@ -1928,19 +1916,16 @@ split_point_start: // At split points actual search starts from here
   // ok_to_use_TT() returns true if a transposition table score
   // can be used at a given point in search.
 
-  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply) {
+  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value beta, int ply) {
 
     Value v = value_from_tt(tte->value(), ply);
 
-  return (  tte->depth() >= depth
-          || v >= Max(value_mate_in(PLY_MAX), beta)
-          || v <= Min(value_mated_in(PLY_MAX), alpha))
+    return   (   tte->depth() >= depth
+              || v >= Max(value_mate_in(PLY_MAX), beta)
+              || v < Min(value_mated_in(PLY_MAX), beta))
 
-           && (
-                  ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
-               || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha)
-               || (tte->type() == VALUE_TYPE_EXACT && v < beta && v > alpha)
-             );
+          && (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
+              || ((tte->type() & VALUE_TYPE_UPPER) && v < beta));
   }
 
 
@@ -1994,9 +1979,9 @@ split_point_start: // At split points actual search starts from here
     {
         m = movesSearched[i];
 
-        //assert(m != move);
+        assert(m != move);
 
-        if (m != move && !pos.move_is_capture_or_promotion(m))
+        if (!pos.move_is_capture_or_promotion(m))
             H.failure(pos.piece_on(move_from(m)), move_to(m), depth);
     }
   }
@@ -2723,13 +2708,13 @@ split_point_start: // At split points actual search starts from here
     s << "info depth " << Iteration // FIXME
       << " seldepth " << int(m - pv)
       << " multipv " << pvLine + 1
-      << " score "  << value_to_uci(pv_score)
-      << (pv_score  >= beta ? " lowerbound" : pv_score <= alpha ? " upperbound" : "")
-      << " time "   << current_search_time()
-      << " nodes "  << pos.nodes_searched()
-      << " nps "    << nps(pos)
+      << " score " << value_to_uci(pv_score)
+      << (pv_score >= beta ? " lowerbound" : pv_score <= alpha ? " upperbound" : "")
+      << " time "  << current_search_time()
+      << " nodes " << pos.nodes_searched()
+      << " nps "   << nps(pos)
       << " tbhits " << pos.tb_hits()
-      << " pv "     << l.str();
+      << " pv "    << l.str();
 
     if (UseLogFile && pvLine == 0)
     {

@@ -108,8 +108,6 @@ void init_uci_options() {
   schemes[3] = "Zlib-9 (cp3)";
   schemes[4] = "LZMA-5-4k (cp4)";
   Options["GaviotaTbCompression"] = Option(schemes[4], schemes);
-  Options["Update history and killer moves in PV"] = Option(true);
-  Options["Max depth to update history and killers in PV"] = Option(20, 2, 99);
   Options["Use smooth scaling"] = Option(false);
   Options["Linear Factor in Centipawns"] = Option(18, -500, 500);
   Options["Constant Factor in Centipawns"] = Option(310, -1500, 1500);
@@ -159,7 +157,6 @@ void print_uci_options() {
                   for (StrVector::const_iterator itc = it->second.comboValues.begin(); itc != it->second.comboValues.end(); ++itc)
                       cout << " var " << *itc;
               }
-
               break;
           }
   cout << endl;
