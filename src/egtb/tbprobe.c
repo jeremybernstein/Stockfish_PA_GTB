@@ -32,8 +32,8 @@ Copyright (c) 2010 Miguel A. Ballicora
 #include "gtb-probe.h"
 
 /* local prototypes */
-static void dtm_print (int stm, int tb_available, unsigned info, unsigned pliestomate);
-static void wdl_print (int stm, int tb_available, unsigned info);
+static void dtm_print (unsigned stm, int tb_available, unsigned info, unsigned pliestomate);
+static void wdl_print (unsigned stm, int tb_available, unsigned info);
 
 /* 	
 |	paths to TBs, generally provided by the user 
@@ -41,9 +41,9 @@ static void wdl_print (int stm, int tb_available, unsigned info);
 |	multiple paths separated by ';'
 |	The example in this file uses both styles simultaneoulsy
 */
-char *path1 = "gtb/gtb4";
-char *path2 = "gtb/gtb3;gtb/gtb2";
-char *path3 = "gtb/gtb1";
+const char *path1 = "gtb/gtb4";
+const char *path2 = "gtb/gtb3;gtb/gtb2";
+const char *path3 = "gtb/gtb1";
 
 int main (int argc, char *argv[])
 {
@@ -51,9 +51,9 @@ int main (int argc, char *argv[])
 	|   Probing info to be provided
 	\*--------------------------------------*/
 
-	int	stm;				/* side to move */
-	int	epsquare;			/* target square for an en passant capture */
-	int	castling;			/* castling availability, 0 => no castles */
+	unsigned int  stm;		/* side to move */
+	unsigned int  epsquare;	/* target square for an en passant capture */
+	unsigned int  castling;	/* castling availability, 0 => no castles */
 	unsigned int  ws[17];	/* list of squares for white */
 	unsigned int  bs[17];	/* list of squares for black */
 	unsigned char wp[17];	/* what white pieces are on those squares */
@@ -104,9 +104,13 @@ int main (int argc, char *argv[])
 
 	/* the number of paths that can be added is only limited by memory */
 	paths = tbpaths_init();
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 	paths = tbpaths_add (paths, path1);
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 	paths = tbpaths_add (paths, path2);
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 	paths = tbpaths_add (paths, path3);
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 
 	/* init probing code, indexes, paths, etc. */
 	initinfo = tb_init (verbosity, scheme, paths);
@@ -325,7 +329,7 @@ int main (int argc, char *argv[])
 	\*----------------------------------------------------------------------------------------*/	
 
 	{
-		int av = tb_availability();
+		unsigned av = tb_availability();
 
 		if (0 != (av& 1)) printf ("Some 3-pc TBs available\n"); else printf ("No 3-pc TBs available\n");
 		if (0 != (av& 2)) printf ("3-pc TBs complete\n");  
@@ -375,7 +379,7 @@ int main (int argc, char *argv[])
 \*----------------------------------------------------------------------*/
 
 static void
-dtm_print (int stm, int tb_available, unsigned info, unsigned pliestomate)
+dtm_print (unsigned stm, int tb_available, unsigned info, unsigned pliestomate)
 {
 	if (tb_available) {
 
@@ -400,7 +404,7 @@ dtm_print (int stm, int tb_available, unsigned info, unsigned pliestomate)
 }
 
 static void
-wdl_print (int stm, int tb_available, unsigned info)
+wdl_print (unsigned stm, int tb_available, unsigned info)
 {
 	if (tb_available) {
 

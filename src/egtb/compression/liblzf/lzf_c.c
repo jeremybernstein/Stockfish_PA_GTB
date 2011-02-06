@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2000-2008 Marc Alexander Lehmann <schmorp@schmorp.de>
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modifica-
  * tion, are permitted provided that the following conditions are met:
- *
+ * 
  *   1.  Redistributions of source code must retain the above copyright notice,
  *       this list of conditions and the following disclaimer.
- *
+ * 
  *   2.  Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
  * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MER-
  * CHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
@@ -144,7 +144,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 
   lit = 0; op++; /* start run */
 
-  hval = FRST (ip);
+  hval = (unsigned)(FRST (ip)); /*MAB silence warning with cast*/
   while (ip < in_end - 2)
     {
       hval = NEXT (hval, ip);
@@ -155,9 +155,9 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 /*MAB: Remove 1, it was a constant, to silence compiler */
 #if INIT_HTAB
              ref < ip /* the next test will actually take care of this, but this is faster */
-		  &&
+		  &&	
 #endif
-             (off = ip - ref - 1) < MAX_OFF
+             (off = (unsigned long)(ip - ref - 1)) < MAX_OFF /*MAB silence warning with cast */
           && ip + 4 < in_end
           && ref > (u8 *)in_data
 #if STRICT_ALIGN
@@ -172,7 +172,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
         {
           /* match found at *ref++ */
           unsigned int len = 2;
-          unsigned int maxlen = in_end - ip - len;
+          unsigned int maxlen = (unsigned)(in_end - ip - (int)len); /* MAB silence warning with casting */
           maxlen = maxlen > MAX_REF ? MAX_REF : maxlen;
 
           if (expect_false (op + 3 + 1 >= out_end)) /* first a faster conservative test */
@@ -240,7 +240,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 # if VERY_FAST && !ULTRA_FAST
           --ip;
 # endif
-          hval = FRST (ip);
+          hval = (unsigned)(FRST (ip)); /*MAB silence warning with cast*/
 
           hval = NEXT (hval, ip);
           htab[IDX (hval)] = ip;
@@ -296,6 +296,6 @@ lzf_compress (const void *const in_data, unsigned int in_len,
   op [- lit - 1] = (u8) (lit - 1); /* end run */ /*MAB: Casting to u8 to silence compiler */
   op -= !lit; /* undo run if length is zero */
 
-  return op - (u8 *)out_data;
+  return (unsigned)(op - (u8 *)out_data); /*MAB: Casting to unsigned to silence compiler */
 }
 

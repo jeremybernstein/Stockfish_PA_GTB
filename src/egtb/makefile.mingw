@@ -7,9 +7,9 @@ INCLUDE = -Isysport/ \
 	  -Icompression/huffman/
 
 MAKE = make -f makefile.mingw
-AR = ar
-RANLIB = ranlib
-DEFAULT_CC = gcc
+AR = i386-mingw32-ar
+RANLIB = i386-mingw32-ranlib
+DEFAULT_CC = i386-mingw32-gcc
 DEFAULT_DEFINE = -DZ_PREFIX
 DEFAULT_ARCHFLAGS = -m32
 DEFAULT_CFLAGS = -Wall -Wextra $(INCLUDE) $(DEFAULT_DEFINE) \
