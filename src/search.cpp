@@ -290,6 +290,7 @@ namespace {
 
   Move id_loop(Position& pos, Move searchMoves[], Move* ponderMove);
   Value root_search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, RootMoveList& rml);
+  Value root_search_tb(Position& pos, Value alpha, Value beta, Depth depth, RootMoveList& rml);
 
   template <NodeType PvNode, bool SpNode>
   Value search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, int ply);
@@ -628,6 +629,15 @@ namespace {
 
         depth = (Iteration - 2) * ONE_PLY + InitialDepth;
 
+        // Search the tablebases at the root. If there's a hit, we're done.
+        if (UseGaviotaTb 
+            && pos.total_piece_count() <= MaxEgtbPieces
+            && (value = root_search_tb(pos, alpha, beta, depth, rml)) != VALUE_NONE)
+        {
+            *ponderMove = rml[0].pv[1];
+            return rml[0].pv[0];
+        }
+
         // Search to the current depth, rml is updated and sorted
         value = root_search(pos, ss, alpha, beta, depth, rml);
 
@@ -694,6 +704,61 @@ namespace {
     return rml[0].pv[0];
   }
 
+  // root_search_tb() performs an initial tablebases probe, returning
+  // a sorted results list, fastest mate first.
+
+  Value root_search_tb(Position& pos, Value alpha,
+                    Value beta, Depth depth, RootMoveList& rml) {
+    StateInfo st;
+    CheckInfo ci(pos);
+    Move move;
+    Value value, bestvalue, tbValue;
+    bool moveIsCheck;
+
+    value = VALUE_NONE;
+    bestvalue = -VALUE_INFINITE;
+
+    // Initialize node (polling is omitted at root)
+    rml.set_non_pv_scores(pos);
+
+    // Loop through all moves in the root move list
+    for (int i = 0; i < (int)rml.size() && !StopRequest; i++)
+    {
+
+        // This is used by time management
+        FirstRootMove = (i == 0);
+
+        // Pick the next root move, and print the move and the move number to
+        // the standard output.
+        move = rml[i].pv[0];
+        moveIsCheck = pos.move_is_check(move);
+            
+        // EGTB probe
+		pos.do_move(move, st, ci, moveIsCheck);
+		tbValue = -attempt_probe_egtb(pos, true, ONE_PLY, depth, alpha, beta);
+		pos.undo_move(move);
+		if (tbValue != -VALUE_NONE) {
+            if (tbValue == VALUE_KNOWN_WIN)
+                TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            else if (tbValue == -VALUE_KNOWN_WIN)
+                TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+            else
+                TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+
+            rml[i].pv_score = tbValue;
+            rml[i].extract_pv_from_tt(pos);
+
+            if (tbValue > bestvalue) {
+    		    // Inform GUI that PV has changed
+                value = bestvalue = tbValue;
+    			cout << rml[i].pv_info_to_uci(pos, alpha, beta) << endl;
+            }
+		}
+    }
+    // Sort the moves before to return
+    rml.sort();
+    return value;
+  }
 
   // root_search() is the function which searches the root node. It is
   // similar to search_pv except that it prints some information to the
@@ -706,7 +771,7 @@ namespace {
     int64_t nodes;
     Move move;
     Depth ext, newDepth;
-    Value value, tbValue, oldAlpha;
+    Value value, oldAlpha;
     bool isCheck, moveIsCheck, captureOrPromotion, dangerous;
     int researchCountFH, researchCountFL;
 
@@ -719,21 +784,7 @@ namespace {
 
     // Step 2. Check for aborted search (omitted at root)
     // Step 3. Mate distance pruning (omitted at root)
-    // Step 4a. Transposition table lookup (omitted at root)
-    // Step 4b. EGTB probe
-    if (   UseGaviotaTb
-        && pos.total_piece_count() <= MaxEgtbPieces
-        && (tbValue = attempt_probe_egtb(pos, true, ONE_PLY, depth, alpha, beta)) != VALUE_NONE)
-    {
-        if (tbValue == VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
-        else if (tbValue == -VALUE_KNOWN_WIN)
-            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
-        else
-            TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
-
-        return tbValue;
-    }
+    // Step 4. Transposition table lookup (omitted at root)
 
     // Step 5. Evaluate the position statically
     // At root we do this only to get reference value for child nodes
@@ -1936,7 +1987,7 @@ split_point_start: // At split points actual search starts from here
       bool hard;
       bool exact;
 
-      if (depth >= 8 * ONE_PLY || ply <= 1 || (pvNode && depth >= 5 * ONE_PLY))
+      if (ply == ONE_PLY || depth >= 8 * ONE_PLY || ply <= 1 || (pvNode && depth >= 5 * ONE_PLY))
           hard = true;
       else if (depth > Depth(0) || pvNode)
           hard = false;
