@@ -1511,6 +1511,7 @@ split_point_start: // At split points actual search starts from here
         // Here we have the lock still grabbed
         sp->slaves[threadID] = 0;
         sp->nodes += pos.nodes_searched();
+        sp->tbhits += pos.tb_hits ();
         lock_release(&(sp->lock));
     }
 
@@ -2588,6 +2589,7 @@ split_point_start: // At split points actual search starts from here
     splitPoint.moveCount = moveCount;
     splitPoint.pos = &pos;
     splitPoint.nodes = 0;
+    splitPoint.tbhits = 0;
     splitPoint.parentSstack = ss;
     for (i = 0; i < activeThreads; i++)
         splitPoint.slaves[i] = 0;
@@ -2645,7 +2647,7 @@ split_point_start: // At split points actual search starts from here
     masterThread.activeSplitPoints--;
     masterThread.splitPoint = splitPoint.parent;
     pos.set_nodes_searched(pos.nodes_searched() + splitPoint.nodes);
-
+    pos.set_tb_hits (pos.tb_hits () + splitPoint.tbhits);
     lock_release(&mpLock);
   }
 

@@ -66,6 +66,7 @@ struct SplitPoint {
   // Shared data
   Lock lock;
   volatile int64_t nodes;
+  volatile int64_t tbhits;
   volatile Value alpha;
   volatile Value bestValue;
   volatile int moveCount;
