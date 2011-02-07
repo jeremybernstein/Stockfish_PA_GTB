@@ -588,6 +588,17 @@ namespace {
         return MOVE_NONE;
     }
 
+    // Search the tablebases at the root. If there's a hit, we're done.
+    Iteration = 1;
+    if (UseGaviotaTb 
+        && pos.total_piece_count() <= MaxEgtbPieces
+        && (value = root_search_tb(pos, alpha, beta, ONE_PLY, rml)) != VALUE_NONE)
+    {
+        *ponderMove = rml[0].pv[1];
+        StopRequest = true;
+        return rml[0].pv[0];
+    }
+
     // Initialize
     TT.new_search();
     H.clear();
@@ -628,15 +639,6 @@ namespace {
         }
 
         depth = (Iteration - 2) * ONE_PLY + InitialDepth;
-
-        // Search the tablebases at the root. If there's a hit, we're done.
-        if (UseGaviotaTb 
-            && pos.total_piece_count() <= MaxEgtbPieces
-            && (value = root_search_tb(pos, alpha, beta, depth, rml)) != VALUE_NONE)
-        {
-            *ponderMove = rml[0].pv[1];
-            return rml[0].pv[0];
-        }
 
         // Search to the current depth, rml is updated and sorted
         value = root_search(pos, ss, alpha, beta, depth, rml);
@@ -710,10 +712,8 @@ namespace {
   Value root_search_tb(Position& pos, Value alpha,
                     Value beta, Depth depth, RootMoveList& rml) {
     StateInfo st;
-    CheckInfo ci(pos);
     Move move;
     Value value, bestvalue, tbValue;
-    bool moveIsCheck;
 
     value = VALUE_NONE;
     bestvalue = -VALUE_INFINITE;
@@ -724,35 +724,35 @@ namespace {
     // Loop through all moves in the root move list
     for (int i = 0; i < (int)rml.size() && !StopRequest; i++)
     {
-
         // This is used by time management
         FirstRootMove = (i == 0);
 
         // Pick the next root move, and print the move and the move number to
         // the standard output.
         move = rml[i].pv[0];
-        moveIsCheck = pos.move_is_check(move);
             
         // EGTB probe
-		pos.do_move(move, st, ci, moveIsCheck);
-		tbValue = -attempt_probe_egtb(pos, true, ONE_PLY, depth, alpha, beta);
-		pos.undo_move(move);
-		if (tbValue != -VALUE_NONE) {
+        pos.do_move(move, st);
+        tbValue = -attempt_probe_egtb(pos, true, ONE_PLY, depth, alpha, beta);
+        pos.undo_move(move);
+        // is there any point to storing these in the TT?
+        if (tbValue != -VALUE_NONE) {
+/*
             if (tbValue == VALUE_KNOWN_WIN)
                 TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
             else if (tbValue == -VALUE_KNOWN_WIN)
                 TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
             else
                 TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
-
+*/
             rml[i].pv_score = tbValue;
             rml[i].extract_pv_from_tt(pos);
 
             if (tbValue > bestvalue) {
     		    // Inform GUI that PV has changed
                 value = bestvalue = tbValue;
-    			cout << rml[i].pv_info_to_uci(pos, alpha, beta) << endl;
             }
+            cout << rml[i].pv_info_to_uci(pos, alpha, beta, i) << endl;
 		}
     }
     // Sort the moves before to return
