@@ -27,6 +27,7 @@
 #include <sstream>
 #include <string>
 
+#include "egtb.h"
 #include "evaluate.h"
 #include "misc.h"
 #include "move.h"
@@ -118,6 +119,9 @@ bool execute_uci_command(const string& cmd) {
 
   else if (token == "perft")
       perft(pos, up);
+
+  else if (token == "stop")
+      ; // ignore 'stop'
 
   else
       cout << "Unknown command: " << cmd << endl;
@@ -224,6 +228,8 @@ namespace {
         value += (" " + token);
 
     Options[name].set_value(value);
+
+    init_egtb();
   }
 
 

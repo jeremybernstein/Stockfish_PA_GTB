@@ -59,11 +59,17 @@ namespace
 
 void init_egtb()
 {
+  bool useTbs = Options["UseGaviotaTb"].value<bool>();
   std::string newTbPaths = Options["GaviotaTbPath"].value<std::string>();
   int newTbSize = Options["GaviotaTbCache"].value<int>();
   int newCompressionScheme = get_compression_scheme_from_string(Options["GaviotaTbCompression"].value<std::string>());
   Chess960 = Options["UCI_Chess960"].value<bool>();
     
+  // If we don't use the tablebases, close them out (in case previously open).
+  if (!useTbs) {
+      close_egtb();
+      return;
+  }
 
   // Check if we need to initialize or reinitialize.
   if (newTbSize != TbSize || newTbPaths != TbPaths || newCompressionScheme != CompressionScheme)

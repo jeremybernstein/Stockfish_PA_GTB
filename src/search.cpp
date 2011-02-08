@@ -481,12 +481,6 @@ bool think(Position& pos, bool infinite, bool ponder, int time[], int increment[
   for (int i = 1; i < ThreadsMgr.active_threads(); i++)
       ThreadsMgr.wake_sleeping_thread(i);
 
-  // Initialize endgame tablebases
-  if (UseGaviotaTb)
-      init_egtb();
-  else
-      close_egtb();
-
   // Set thinking time
   int myTime = time[pos.side_to_move()];
   int myIncrement = increment[pos.side_to_move()];
@@ -576,7 +570,6 @@ namespace {
 
     // Moves to search are verified, scored and sorted
     RootMoveList rml(pos, searchMoves);
-    pos.set_tb_hits(0); // reset the tbhits - we will start again at 0
 
     // Handle special case of searching on a mate/stale position
     if (rml.size() == 0)
@@ -589,7 +582,19 @@ namespace {
         return MOVE_NONE;
     }
 
-    Iteration = 1; // we should have already probed the tbs in the qsearch. a soft probe is therefore appropriate here.
+    Iteration = 1;
+    if (pos.tb_hits()) { // it might be nice to iterate through then entire main line a la houdini at some point
+        cout << set960(pos.is_chess960()) // Is enough to set once at the beginning
+             << "info depth " << Iteration << endl;
+        for (int i = 0; i < rml.size() && i < MultiPV; i++) {
+            cout << rml[i].pv_info_to_uci(pos, -VALUE_INFINITE, VALUE_INFINITE, i) << endl;
+        }
+        *ponderMove = rml[0].pv[1];
+        StopRequest = true; // We have to stop, or chessbase gets confused that we aren't calculating anymore.
+        return rml[0].pv[0];
+    }
+
+#if 0
     if (   UseGaviotaTb 
         && pos.total_piece_count() <= MaxEgtbPieces
         && (value = root_search_tb(pos, rml)) != VALUE_NONE)
@@ -598,7 +603,7 @@ namespace {
         StopRequest = true;
         return rml[0].pv[0];
     }
-
+#endif
     // Initialize
     TT.new_search();
     H.clear();
@@ -707,6 +712,7 @@ namespace {
 
   // root_search_tb() root level tablebase probe
 
+#if 0
   Value root_search_tb(Position& pos, RootMoveList& rml) {
     StateInfo st;
     Move move;
@@ -743,7 +749,7 @@ namespace {
     }
     return value;
   }
-
+#endif
   // root_search() is the function which searches the root node. It is
   // similar to search_pv except that it prints some information to the
   // standard output and handles the fail low/high loops.
