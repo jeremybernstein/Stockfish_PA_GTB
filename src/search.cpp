@@ -290,7 +290,7 @@ namespace {
 
   Move id_loop(Position& pos, Move searchMoves[], Move* ponderMove);
   Value root_search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, RootMoveList& rml);
-  Value root_search_tb(Position& pos, Value alpha, Value beta, Depth depth, RootMoveList& rml);
+  Value root_search_tb(Position& pos, RootMoveList& rml);
 
   template <NodeType PvNode, bool SpNode>
   Value search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, int ply);
@@ -576,6 +576,7 @@ namespace {
 
     // Moves to search are verified, scored and sorted
     RootMoveList rml(pos, searchMoves);
+    pos.set_tb_hits(0); // reset the tbhits - we will start again at 0
 
     // Handle special case of searching on a mate/stale position
     if (rml.size() == 0)
@@ -588,11 +589,10 @@ namespace {
         return MOVE_NONE;
     }
 
-    // Search the tablebases at the root. If there's a hit, we're done.
-    Iteration = 1;
-    if (UseGaviotaTb 
+    Iteration = 1; // we should have already probed the tbs in the qsearch. a soft probe is therefore appropriate here.
+    if (   UseGaviotaTb 
         && pos.total_piece_count() <= MaxEgtbPieces
-        && (value = root_search_tb(pos, alpha, beta, ONE_PLY, rml)) != VALUE_NONE)
+        && (value = root_search_tb(pos, rml)) != VALUE_NONE)
     {
         *ponderMove = rml[0].pv[1];
         StopRequest = true;
@@ -604,7 +604,6 @@ namespace {
     H.clear();
     init_ss_array(ss, PLY_MAX_PLUS_2);
     ValueByIteration[1] = rml[0].pv_score;
-    Iteration = 1;
 
     // Send initial RootMoveList scoring (iteration 1)
     cout << set960(pos.is_chess960()) // Is enough to set once at the beginning
@@ -706,11 +705,9 @@ namespace {
     return rml[0].pv[0];
   }
 
-  // root_search_tb() performs an initial tablebases probe, returning
-  // a sorted results list, fastest mate first.
+  // root_search_tb() root level tablebase probe
 
-  Value root_search_tb(Position& pos, Value alpha,
-                    Value beta, Depth depth, RootMoveList& rml) {
+  Value root_search_tb(Position& pos, RootMoveList& rml) {
     StateInfo st;
     Move move;
     Value value, bestvalue, tbValue;
@@ -718,10 +715,7 @@ namespace {
     value = VALUE_NONE;
     bestvalue = -VALUE_INFINITE;
 
-    // Initialize node (polling is omitted at root)
-    rml.set_non_pv_scores(pos);
-
-    // Loop through all moves in the root move list
+    // Loop through all moves in the root move list; they are already sorted
     for (int i = 0; i < (int)rml.size() && !StopRequest; i++)
     {
         // This is used by time management
@@ -733,30 +727,20 @@ namespace {
             
         // EGTB probe
         pos.do_move(move, st);
-        tbValue = -attempt_probe_egtb(pos, true, ONE_PLY, depth, alpha, beta);
+        tbValue = -attempt_probe_egtb(pos, true, ONE_PLY, ONE_PLY, -VALUE_INFINITE, VALUE_INFINITE);
         pos.undo_move(move);
-        // is there any point to storing these in the TT?
         if (tbValue != -VALUE_NONE) {
-/*
-            if (tbValue == VALUE_KNOWN_WIN)
-                TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
-            else if (tbValue == -VALUE_KNOWN_WIN)
-                TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
-            else
-                TT.store(pos.get_key(), value_to_tt(tbValue, ONE_PLY), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
-*/
+            // is there any point to storing these in the TT?
             rml[i].pv_score = tbValue;
             rml[i].extract_pv_from_tt(pos);
 
             if (tbValue > bestvalue) {
-    		    // Inform GUI that PV has changed
+                // Inform GUI that PV has changed
                 value = bestvalue = tbValue;
             }
-            cout << rml[i].pv_info_to_uci(pos, alpha, beta, i) << endl;
-		}
+            cout << rml[i].pv_info_to_uci(pos, -VALUE_INFINITE, VALUE_INFINITE, i) << endl;
+        }
     }
-    // Sort the moves before to return
-    rml.sort();
     return value;
   }
 
@@ -1536,7 +1520,7 @@ split_point_start: // At split points actual search starts from here
 
     StateInfo st;
     Move ttMove, move;
-    Value bestValue, value, evalMargin, futilityValue, futilityBase;
+    Value bestValue, value, evalMargin, futilityValue, futilityBase, tbValue;
     bool isCheck, enoughMaterial, moveIsCheck, evasionPrunable;
     const TTEntry* tte;
     Depth ttDepth;
@@ -1563,6 +1547,22 @@ split_point_start: // At split points actual search starts from here
     {
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ply);
+    }
+
+    // EGTB probe
+    if (   UseGaviotaTb
+        && pos.total_piece_count() <= MaxEgtbPieces
+        && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
+    {
+        // Store it in the TT for next time...
+        if (tbValue == VALUE_KNOWN_WIN)
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+        else if (tbValue == -VALUE_KNOWN_WIN)
+            TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+        else
+            TT.store(pos.get_key(), value_to_tt(tbValue, ply), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+
+        return tbValue;
     }
 
     // Evaluate the position statically
@@ -1988,7 +1988,7 @@ split_point_start: // At split points actual search starts from here
       bool hard;
       bool exact;
 
-      if (ply == ONE_PLY || depth >= 8 * ONE_PLY || ply <= 1 || (pvNode && depth >= 5 * ONE_PLY))
+      if (depth >= 8 * ONE_PLY || ply <= 1 || (pvNode && depth >= 5 * ONE_PLY))
           hard = true;
       else if (depth > Depth(0) || pvNode)
           hard = false;
