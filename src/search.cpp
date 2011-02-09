@@ -313,7 +313,10 @@ namespace {
   bool value_is_mate(Value value);
   Value value_to_tt(Value v, int ply);
   Value value_from_tt(Value v, int ply);
+
+  template <NodeType PvNode>
   bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply);
+
   Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta);
   bool connected_threat(const Position& pos, Move m, Move threat);
   Value refine_eval(const TTEntry* tte, Value defaultEval, int ply);
@@ -1074,8 +1077,7 @@ namespace {
     // At PV nodes we check for exact scores, while at non-PV nodes we check for
     // and return a fail high/low. Biggest advantage at probing at PV nodes is
     // to have a smooth experience in analysis mode.
-    if (tte && (PvNode ? tte->depth() >= depth && tte->type() == VALUE_TYPE_EXACT
-                       : ok_to_use_TT(tte, depth, beta, ply)))
+    if (tte && ok_to_use_TT<PvNode>(tte, depth, alpha, beta, ply))
     {
         TT.refresh(tte);
         ss->bestMove = ttMove; // Can be MOVE_NONE
@@ -1549,7 +1551,7 @@ split_point_start: // At split points actual search starts from here
     tte = TT.retrieve(pos.get_key());
     ttMove = (tte ? tte->move() : MOVE_NONE);
 
-    if (!PvNode && tte && ok_to_use_TT(tte, ttDepth, beta, ply))
+    if (tte && ok_to_use_TT<PvNode>(tte, ttDepth, alpha, beta, ply))
     {
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ply);
@@ -1974,16 +1976,22 @@ split_point_start: // At split points actual search starts from here
   // ok_to_use_TT() returns true if a transposition table score
   // can be used at a given point in search.
 
-  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value beta, int ply) {
+  template <NodeType PvNode>
+  inline bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply) {
 
-    Value v = value_from_tt(tte->value(), ply);
+      Value v = value_from_tt(tte->value(), ply);
 
-    return   (   tte->depth() >= depth
-              || v >= Max(value_mate_in(PLY_MAX), beta)
-              || v < Min(value_mated_in(PLY_MAX), beta))
+      return
+      PvNode ?    tte->type() == VALUE_TYPE_EXACT
+               && (   tte->depth() >= depth
+                   || v >= value_mate_in(PLY_MAX)
+                   || v <= value_mated_in(PLY_MAX))
 
-          && (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
-              || ((tte->type() & VALUE_TYPE_UPPER) && v < beta));
+             :    (   tte->depth() >= depth
+                   || v >= Max(value_mate_in(PLY_MAX), beta)
+                   || v <= Min(value_mated_in(PLY_MAX), alpha))
+               && (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
+                   || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha));
   }
 
 
