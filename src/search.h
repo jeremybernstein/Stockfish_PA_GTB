@@ -36,7 +36,7 @@
 
 const int PLY_MAX = 100;
 const int PLY_MAX_PLUS_2 = PLY_MAX + 2;
-
+const int LONG_MATE = 2 * PLY_MAX * ONE_PLY;
 
 ////
 //// Types

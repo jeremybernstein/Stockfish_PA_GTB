@@ -290,7 +290,7 @@ namespace {
 
   Move id_loop(Position& pos, Move searchMoves[], Move* ponderMove);
   Value root_search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, RootMoveList& rml);
-  Value root_search_tb(Position& pos, RootMoveList& rml);
+  Value root_tb_mainline(Position& pos, RootMoveList& rm);
 
   template <NodeType PvNode, bool SpNode>
   Value search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, int ply);
@@ -589,6 +589,7 @@ namespace {
     if (pos.tb_hits()) { // it might be nice to iterate through then entire main line a la houdini at some point
         cout << set960(pos.is_chess960()) // Is enough to set once at the beginning
              << "info depth " << Iteration << endl;
+        root_tb_mainline(pos, rml);
         for (int i = 0; i < rml.size() && i < MultiPV; i++) {
             cout << rml[i].pv_info_to_uci(pos, -VALUE_INFINITE, VALUE_INFINITE, i) << endl;
         }
@@ -713,46 +714,34 @@ namespace {
     return rml[0].pv[0];
   }
 
-  // root_search_tb() root level tablebase probe
+  // root_tb_mainline() calculates the complete main line of the top move
+  // of the RootMoveList, if it was a tablebase hit.
+  Value root_tb_mainline(Position& pos, RootMoveList& rm) {
 
-#if 0
-  Value root_search_tb(Position& pos, RootMoveList& rml) {
-    StateInfo st;
-    Move move;
-    Value value, bestvalue, tbValue;
+    if (abs(rm[0].pv_score) >= abs(VALUE_MATE) - LONG_MATE) { // mate score, get the mainline
 
-    value = VALUE_NONE;
-    bestvalue = -VALUE_INFINITE;
+        StateInfo state[PLY_MAX_PLUS_2], *st = state;
+        int index = 0;
+        Move searchMoves[1];
+        searchMoves[0] = MOVE_NONE;
 
-    // Loop through all moves in the root move list; they are already sorted
-    for (int i = 0; i < (int)rml.size() && !StopRequest; i++)
-    {
-        // This is used by time management
-        FirstRootMove = (i == 0);
+        while (1) {
+            pos.do_move(rm[0].pv[index++], *st++);
+            RootMoveList rml(pos, searchMoves);
+            if (rml.size() && abs(rml[0].pv_score) >= abs(VALUE_MATE) - LONG_MATE && index <= PLY_MAX) {
+                rm[0].pv[index] = rml[0].pv[0];
+            } else break;
+        }
+        rm[0].pv[index] = MOVE_NONE;
 
-        // Pick the next root move, and print the move and the move number to
-        // the standard output.
-        move = rml[i].pv[0];
-            
-        // EGTB probe
-        pos.do_move(move, st);
-        tbValue = -attempt_probe_egtb(pos, true, ONE_PLY, ONE_PLY, -VALUE_INFINITE, VALUE_INFINITE);
-        pos.undo_move(move);
-        if (tbValue != -VALUE_NONE) {
-            // is there any point to storing these in the TT?
-            rml[i].pv_score = tbValue;
-            rml[i].extract_pv_from_tt(pos);
-
-            if (tbValue > bestvalue) {
-                // Inform GUI that PV has changed
-                value = bestvalue = tbValue;
-            }
-            cout << rml[i].pv_info_to_uci(pos, -VALUE_INFINITE, VALUE_INFINITE, i) << endl;
+        while (index--) { // back out
+            pos.undo_move(rm[0].pv[index]);
         }
     }
-    return value;
+    return VALUE_NONE;
   }
-#endif
+
+
   // root_search() is the function which searches the root node. It is
   // similar to search_pv except that it prints some information to the
   // standard output and handles the fail low/high loops.
@@ -2109,7 +2098,7 @@ split_point_start: // At split points actual search starts from here
 
     std::stringstream s;
 
-    if (abs(v) < VALUE_MATE - PLY_MAX * ONE_PLY)
+    if (abs(v) < VALUE_MATE - LONG_MATE)
       s << "cp " << int(v) * 100 / int(PawnValueMidgame); // Scale to centipawns
     else
       s << "mate " << (v > 0 ? (VALUE_MATE - v + 1) / 2 : -(VALUE_MATE + v) / 2 );
