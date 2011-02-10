@@ -260,7 +260,6 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
       <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
-      <Optimization>MaxSpeedHighLevel</Optimization>
       <AdditionalOptions>/Qansi-alias /Qinline-min-size- /Qinline-max-per-compile- /Qcomplex-limited-range /Qprec-div- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
