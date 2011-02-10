@@ -20,7 +20,7 @@
 ////
 //// Includes
 ////
-
+#ifdef USE_EGTB
 #include <cassert>
 #include <string>
 
@@ -240,3 +240,5 @@ namespace
       return tb_CP4;
   }
 }
+
+#endif

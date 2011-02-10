@@ -273,9 +273,11 @@ namespace {
   // Multi-threads manager object
   ThreadsManager ThreadsMgr;
   
+#ifdef USE_EGTB
   // EGTB
   bool UseGaviotaTb;
   bool ProbeOnlyAtRoot;
+#endif
 
   // Node counters, used only by thread[0] but try to keep in different cache
   // lines (64 bytes each) from the heavy multi-thread read accessed variables.
@@ -290,7 +292,6 @@ namespace {
 
   Move id_loop(Position& pos, Move searchMoves[], Move* ponderMove);
   Value root_search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, RootMoveList& rml);
-  Value root_tb_mainline(Position& pos, RootMoveList& rm);
 
   template <NodeType PvNode, bool SpNode>
   Value search(Position& pos, SearchStack* ss, Value alpha, Value beta, Depth depth, int ply);
@@ -316,8 +317,10 @@ namespace {
 
   template <NodeType PvNode>
   bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply);
-
+#ifdef USE_EGTB
   Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta);
+  Value root_tb_mainline(Position& pos, RootMoveList& rm);
+#endif
   bool connected_threat(const Position& pos, Move m, Move threat);
   Value refine_eval(const TTEntry* tte, Value defaultEval, int ply);
   void update_history(const Position& pos, Move move, Depth depth, Move movesSearched[], int moveCount);
@@ -471,8 +474,10 @@ bool think(Position& pos, bool infinite, bool ponder, int time[], int increment[
   LogFactor                 = Options["Log Factor in Centipawns"].value<int>() * 0.01;
   MultiPV                   = Options["MultiPV"].value<int>();
   UseLogFile                = Options["Use Search Log"].value<bool>();
+#ifdef USE_EGTB
   UseGaviotaTb              = Options["UseGaviotaTb"].value<bool>();
   ProbeOnlyAtRoot           = Options["ProbeOnlyAtRoot"].value<bool>();
+#endif
 
   read_evaluation_uci_options(pos.side_to_move());
 
@@ -586,6 +591,7 @@ namespace {
     }
 
     Iteration = 1;
+#ifdef USE_EGTB
     if (pos.tb_hits()) { // it might be nice to iterate through then entire main line a la houdini at some point
         cout << set960(pos.is_chess960()) // Is enough to set once at the beginning
              << "info depth " << Iteration << endl;
@@ -597,17 +603,8 @@ namespace {
         StopRequest = true; // We have to stop, or chessbase gets confused that we aren't calculating anymore.
         return rml[0].pv[0];
     }
-
-#if 0
-    if (   UseGaviotaTb 
-        && pos.total_piece_count() <= MaxEgtbPieces
-        && (value = root_search_tb(pos, rml)) != VALUE_NONE)
-    {
-        *ponderMove = rml[0].pv[1];
-        StopRequest = true;
-        return rml[0].pv[0];
-    }
 #endif
+
     // Initialize
     TT.new_search();
     H.clear();
@@ -714,6 +711,7 @@ namespace {
     return rml[0].pv[0];
   }
 
+#ifdef USE_EGTB
   // root_tb_mainline() calculates the complete main line of the top move
   // of the RootMoveList, if it was a tablebase hit.
   Value root_tb_mainline(Position& pos, RootMoveList& rm) {
@@ -740,7 +738,7 @@ namespace {
     }
     return VALUE_NONE;
   }
-
+#endif
 
   // root_search() is the function which searches the root node. It is
   // similar to search_pv except that it prints some information to the
@@ -1073,6 +1071,7 @@ namespace {
         return value_from_tt(tte->value(), ply);
     }
     
+#ifdef USE_EGTB
     // Step 4b. EGTB probe
     if (   UseGaviotaTb && !ProbeOnlyAtRoot
         && pos.total_piece_count() <= MaxEgtbPieces
@@ -1087,6 +1086,7 @@ namespace {
 
         return tbValue;
     }
+#endif
 
     // Step 5. Evaluate the position statically and
     // update gain statistics of parent move.
@@ -1546,6 +1546,7 @@ split_point_start: // At split points actual search starts from here
         return value_from_tt(tte->value(), ply);
     }
 
+#ifdef USE_EGTB
     // EGTB probe
     if (   UseGaviotaTb
         && pos.total_piece_count() <= MaxEgtbPieces
@@ -1561,6 +1562,7 @@ split_point_start: // At split points actual search starts from here
 
         return tbValue;
     }
+#endif
 
     // Evaluate the position statically
     if (isCheck)
@@ -1983,7 +1985,7 @@ split_point_start: // At split points actual search starts from here
                    || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha));
   }
 
-
+#ifdef USE_EGTB
   // attempt_probe_egtb() probes EGTB.
 
   Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta)
@@ -2002,7 +2004,7 @@ split_point_start: // At split points actual search starts from here
 
       return probe_egtb(pos, ply, hard, exact);
   }
-
+#endif
 
   // refine_eval() returns the transposition table score if
   // possible otherwise falls back on static position evaluation.

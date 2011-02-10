@@ -17,7 +17,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#ifdef USE_EGTB
 #if !defined(EGTB_H_INCLUDED)
 #define EGTB_H_INCLUDED
 
@@ -41,4 +41,5 @@ void init_egtb();
 void close_egtb();
 Value probe_egtb(Position &pos, const int ply, const bool hard, const bool exact);
 
+#endif
 #endif
