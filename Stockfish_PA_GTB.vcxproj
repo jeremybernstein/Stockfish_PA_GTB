@@ -1,0 +1,430 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_PGO|Win32">
+      <Configuration>Release_PGO</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_PGO|x64">
+      <Configuration>Release_PGO</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{65447C66-C457-4B4D-AFAB-5E470F75E9A6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>Intel C++ Compiler XE 12.0</PlatformToolset>
+    <InterproceduralOptimization>true</InterproceduralOptimization>
+    <UseIntelIPP>true</UseIntelIPP>
+    <UseIntelMKL>
+    </UseIntelMKL>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>Intel C++ Compiler XE 12.0</PlatformToolset>
+    <InterproceduralOptimization>true</InterproceduralOptimization>
+    <UseIntelIPP>true</UseIntelIPP>
+    <UseIntelMKL />
+    <ProfileGuidedOptimization>PGOInstrument</ProfileGuidedOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>Intel C++ Compiler XE 12.0</PlatformToolset>
+    <UseIntelIPP>true</UseIntelIPP>
+    <InterproceduralOptimization>true</InterproceduralOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>Intel C++ Compiler XE 12.0</PlatformToolset>
+    <UseIntelIPP>true</UseIntelIPP>
+    <InterproceduralOptimization>true</InterproceduralOptimization>
+    <ProfileGuidedOptimization>PGOInstrument</ProfileGuidedOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <CLRSupport>false</CLRSupport>
+    <PlatformToolset>Intel C++ Compiler XE 12.0</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <CLRSupport>false</CLRSupport>
+    <PlatformToolset>Intel C++ Compiler XE 12.0</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\$(PlatformName)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)\$(PlatformName)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\Intermediate\$(PlatformName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)\Intermediate\$(PlatformName)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\$(PlatformName)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">$(Configuration)\$(PlatformName)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Configuration)\$(PlatformName)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">$(Configuration)\$(PlatformName)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\Intermediate\$(PlatformName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">$(Configuration)\Intermediate\$(PlatformName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Configuration)\Intermediate\$(PlatformName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">$(Configuration)\Intermediate\$(PlatformName)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AssemblyDebug>true</AssemblyDebug>
+      <SubSystem>Console</SubSystem>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <TargetMachine>MachineX86</TargetMachine>
+      <CLRUnmanagedCodeCheck>false</CLRUnmanagedCodeCheck>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_WIN32;_DEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AssemblyDebug>true</AssemblyDebug>
+      <SubSystem>Console</SubSystem>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <CLRUnmanagedCodeCheck>false</CLRUnmanagedCodeCheck>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>MaxSpeedHighLevel</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <GlobalOptimizations>true</GlobalOptimizations>
+      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
+      <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
+      <EnableMatrixMultiplyLibraryCall>Yes</EnableMatrixMultiplyLibraryCall>
+      <Parallelization>false</Parallelization>
+      <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>MaxSpeedHighLevel</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <GlobalOptimizations>true</GlobalOptimizations>
+      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
+      <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
+      <EnableMatrixMultiplyLibraryCall>Yes</EnableMatrixMultiplyLibraryCall>
+      <Parallelization>false</Parallelization>
+      <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
+      <AdditionalOptions>/Qprof-dir./Release_PGO/Win32/Profile %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_WIN64;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>MaxSpeedHighLevel</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <GlobalOptimizations>true</GlobalOptimizations>
+      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
+      <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
+      <EnableMatrixMultiplyLibraryCall>Yes</EnableMatrixMultiplyLibraryCall>
+      <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_WIN64;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>MaxSpeedHighLevel</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <GlobalOptimizations>true</GlobalOptimizations>
+      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
+      <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
+      <EnableMatrixMultiplyLibraryCall>Yes</EnableMatrixMultiplyLibraryCall>
+      <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions>/Qprof-dir"./Release_PGO/x64/Profile" %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="src\egtb\compression\lzma\Alloc.h" />
+    <ClInclude Include="src\bitboard.h" />
+    <ClInclude Include="src\bitcount.h" />
+    <ClInclude Include="src\book.h" />
+    <ClInclude Include="src\egtb\compression\lzma\Bra.h" />
+    <ClInclude Include="src\color.h" />
+    <ClInclude Include="src\egtb\compression\zlib\crc32.h" />
+    <ClInclude Include="src\egtb\compression\zlib\deflate.h" />
+    <ClInclude Include="src\depth.h" />
+    <ClInclude Include="src\egtb.h" />
+    <ClInclude Include="src\endgame.h" />
+    <ClInclude Include="src\evaluate.h" />
+    <ClInclude Include="src\egtb\gtb-att.h" />
+    <ClInclude Include="src\egtb\gtb-dec.h" />
+    <ClInclude Include="src\egtb\gtb-probe.h" />
+    <ClInclude Include="src\history.h" />
+    <ClInclude Include="src\egtb\compression\huffman\hzip.h" />
+    <ClInclude Include="src\egtb\compression\zlib\inffast.h" />
+    <ClInclude Include="src\egtb\compression\zlib\inffixed.h" />
+    <ClInclude Include="src\egtb\compression\zlib\inflate.h" />
+    <ClInclude Include="src\egtb\compression\zlib\inftrees.h" />
+    <ClInclude Include="src\lock.h" />
+    <ClInclude Include="src\egtb\compression\liblzf\lzf.h" />
+    <ClInclude Include="src\egtb\compression\lzma\LzFind.h" />
+    <ClInclude Include="src\egtb\compression\lzma\LzFindMt.h" />
+    <ClInclude Include="src\egtb\compression\liblzf\lzfP.h" />
+    <ClInclude Include="src\egtb\compression\lzma\LzHash.h" />
+    <ClInclude Include="src\egtb\compression\lzma\Lzma86Dec.h" />
+    <ClInclude Include="src\egtb\compression\lzma\Lzma86Enc.h" />
+    <ClInclude Include="src\egtb\compression\lzma\LzmaDec.h" />
+    <ClInclude Include="src\egtb\compression\lzma\LzmaEnc.h" />
+    <ClInclude Include="src\material.h" />
+    <ClInclude Include="src\misc.h" />
+    <ClInclude Include="src\move.h" />
+    <ClInclude Include="src\movegen.h" />
+    <ClInclude Include="src\movepick.h" />
+    <ClInclude Include="src\pawns.h" />
+    <ClInclude Include="src\piece.h" />
+    <ClInclude Include="src\position.h" />
+    <ClInclude Include="src\egtb\progname.h" />
+    <ClInclude Include="src\psqtab.h" />
+    <ClInclude Include="src\rkiss.h" />
+    <ClInclude Include="src\san.h" />
+    <ClInclude Include="src\search.h" />
+    <ClInclude Include="src\square.h" />
+    <ClInclude Include="src\egtb\sysport\sysport.h" />
+    <ClInclude Include="src\thread.h" />
+    <ClInclude Include="src\timeman.h" />
+    <ClInclude Include="src\egtb\compression\zlib\trees.h" />
+    <ClInclude Include="src\tt.h" />
+    <ClInclude Include="src\types.h" />
+    <ClInclude Include="src\egtb\compression\lzma\Types.h" />
+    <ClInclude Include="src\ucioption.h" />
+    <ClInclude Include="src\value.h" />
+    <ClInclude Include="src\egtb\version.h" />
+    <ClInclude Include="src\egtb\compression\wrap.h" />
+    <ClInclude Include="src\egtb\compression\zlib\zconf.h" />
+    <ClInclude Include="src\egtb\compression\zlib\zconf.in.h" />
+    <ClInclude Include="src\egtb\compression\zlib\zlib.h" />
+    <ClInclude Include="src\egtb\compression\zlib\zutil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\egtb\compression\zlib\adler32.c" />
+    <ClCompile Include="src\egtb\compression\lzma\Alloc.c" />
+    <ClCompile Include="src\benchmark.cpp" />
+    <ClCompile Include="src\bitbase.cpp" />
+    <ClCompile Include="src\bitboard.cpp" />
+    <ClCompile Include="src\book.cpp" />
+    <ClCompile Include="src\egtb\compression\lzma\Bra86.c" />
+    <ClCompile Include="src\egtb\compression\zlib\crc32.c" />
+    <ClCompile Include="src\egtb\compression\zlib\deflate.c" />
+    <ClCompile Include="src\egtb.cpp" />
+    <ClCompile Include="src\endgame.cpp" />
+    <ClCompile Include="src\evaluate.cpp" />
+    <ClCompile Include="src\egtb\gtb-att.c" />
+    <ClCompile Include="src\egtb\gtb-dec.c" />
+    <ClCompile Include="src\egtb\gtb-probe.c" />
+    <ClCompile Include="src\history.cpp" />
+    <ClCompile Include="src\egtb\compression\huffman\hzip.c" />
+    <ClCompile Include="src\egtb\compression\zlib\infback.c" />
+    <ClCompile Include="src\egtb\compression\zlib\inffast.c" />
+    <ClCompile Include="src\egtb\compression\zlib\inflate.c" />
+    <ClCompile Include="src\egtb\compression\zlib\inftrees.c" />
+    <ClCompile Include="src\egtb\compression\liblzf\lzf_c.c" />
+    <ClCompile Include="src\egtb\compression\liblzf\lzf_d.c" />
+    <ClCompile Include="src\egtb\compression\lzma\LzFind.c" />
+    <ClCompile Include="src\egtb\compression\lzma\Lzma86Dec.c" />
+    <ClCompile Include="src\egtb\compression\lzma\Lzma86Enc.c" />
+    <ClCompile Include="src\egtb\compression\lzma\LzmaDec.c" />
+    <ClCompile Include="src\egtb\compression\lzma\LzmaEnc.c" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\material.cpp" />
+    <ClCompile Include="src\misc.cpp" />
+    <ClCompile Include="src\move.cpp" />
+    <ClCompile Include="src\movegen.cpp" />
+    <ClCompile Include="src\movepick.cpp" />
+    <ClCompile Include="src\pawns.cpp" />
+    <ClCompile Include="src\position.cpp" />
+    <ClCompile Include="src\san.cpp" />
+    <ClCompile Include="src\search.cpp" />
+    <ClCompile Include="src\egtb\sysport\sysport.c" />
+    <ClCompile Include="src\timeman.cpp" />
+    <ClCompile Include="src\egtb\compression\zlib\trees.c" />
+    <ClCompile Include="src\tt.cpp" />
+    <ClCompile Include="src\uci.cpp" />
+    <ClCompile Include="src\ucioption.cpp" />
+    <ClCompile Include="src\egtb\compression\zlib\uncompr.c" />
+    <ClCompile Include="src\egtb\compression\wrap.c" />
+    <ClCompile Include="src\egtb\compression\zlib\zcompress.c" />
+    <ClCompile Include="src\egtb\compression\zlib\zutil.c" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
