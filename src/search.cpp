@@ -307,6 +307,20 @@ namespace {
   }
 
   template <NodeType PvNode>
+  inline bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply) {
+
+    Value v = value_from_tt(tte->value(), ply);
+
+    return  (   tte->depth() >= depth
+             || v >= Max(value_mate_in(PLY_MAX), beta)
+             || v <= Min(value_mated_in(PLY_MAX), alpha))
+          &&
+            (PvNode ? tte->type() == VALUE_TYPE_EXACT
+                    : (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
+                       || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha)));
+  }
+
+  template <NodeType PvNode>
   Depth extension(const Position& pos, Move m, bool captureOrPromotion, bool moveIsCheck, bool singleEvasion, bool mateThreat, bool* dangerous);
 
   bool check_is_dangerous(Position &pos, Move move, Value futilityBase, Value beta, Value *bValue);
@@ -315,8 +329,6 @@ namespace {
   Value value_to_tt(Value v, int ply);
   Value value_from_tt(Value v, int ply);
 
-  template <NodeType PvNode>
-  bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply);
 #ifdef USE_EGTB
   Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta);
   Value root_tb_mainline(Position& pos, RootMoveList& rm);
@@ -1963,27 +1975,6 @@ split_point_start: // At split points actual search starts from here
     return false;
   }
 
-
-  // ok_to_use_TT() returns true if a transposition table score
-  // can be used at a given point in search.
-
-  template <NodeType PvNode>
-  inline bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply) {
-
-      Value v = value_from_tt(tte->value(), ply);
-
-      return
-      PvNode ?    tte->type() == VALUE_TYPE_EXACT
-               && (   tte->depth() >= depth
-                   || v >= value_mate_in(PLY_MAX)
-                   || v <= value_mated_in(PLY_MAX))
-
-             :    (   tte->depth() >= depth
-                   || v >= Max(value_mate_in(PLY_MAX), beta)
-                   || v <= Min(value_mated_in(PLY_MAX), alpha))
-               && (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
-                   || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha));
-  }
 
 #ifdef USE_EGTB
   // attempt_probe_egtb() probes EGTB.
