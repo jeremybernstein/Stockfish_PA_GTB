@@ -30,7 +30,9 @@
 
 #include "bitboard.h"
 #include "bitcount.h"
+#ifdef USE_EGTB
 #include "egtb.h"
+#endif
 #include "endgame.h"
 #include "evaluate.h"
 #include "material.h"
@@ -69,7 +71,9 @@ int main(int argc, char* argv[]) {
   init_bitbases();
   init_search();
   init_threads();
+#ifdef USE_EGTB
   init_egtb(); // Init here, not at the top of each move. Setting uci options will check this and update if necessary.
+#endif
 
 #ifdef USE_CALLGRIND
   CALLGRIND_START_INSTRUMENTATION;

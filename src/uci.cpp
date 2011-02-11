@@ -27,7 +27,9 @@
 #include <sstream>
 #include <string>
 
+#ifdef USE_EGTB
 #include "egtb.h"
+#endif
 #include "evaluate.h"
 #include "misc.h"
 #include "move.h"
@@ -229,7 +231,9 @@ namespace {
 
     Options[name].set_value(value);
 
+#ifdef USE_EGTB
     init_egtb();
+#endif
   }
 
 

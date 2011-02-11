@@ -99,6 +99,7 @@ void init_uci_options() {
   Options["Clear Hash"] = Option(false, "button");
   Options["UseGaviotaTb"] = Option(true);
   Options["ProbeOnlyAtRoot"] = Option(false);
+#ifdef USE_EGTB
   Options["GaviotaTbPath"] = Option("C:/gtb");
   Options["GaviotaTbCache"] = Option(32, 4, 1024);
   StrVector schemes(5);
@@ -108,6 +109,7 @@ void init_uci_options() {
   schemes[3] = "Zlib-9 (cp3)";
   schemes[4] = "LZMA-5-4k (cp4)";
   Options["GaviotaTbCompression"] = Option(schemes[4], schemes);
+#endif
   Options["Use smooth scaling"] = Option(false);
   Options["Linear Factor in Centipawns"] = Option(18, -500, 500);
   Options["Constant Factor in Centipawns"] = Option(310, -1500, 1500);
