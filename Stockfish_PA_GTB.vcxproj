@@ -33,10 +33,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <InterproceduralOptimization>true</InterproceduralOptimization>
-    <UseIntelIPP>true</UseIntelIPP>
     <UseIntelMKL>
     </UseIntelMKL>
     <PlatformToolset>Intel C++ Compiler XE 12.0</PlatformToolset>
@@ -185,26 +182,18 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;USE_EGTB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <Optimization>MaxSpeedHighLevel</Optimization>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <GlobalOptimizations>true</GlobalOptimizations>
-      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
-      <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
-      <EnableMatrixMultiplyLibraryCall>Yes</EnableMatrixMultiplyLibraryCall>
-      <Parallelization>false</Parallelization>
-      <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
+      <AdditionalOptions>/Qansi-alias /Qinline-min-size- /Qinline-max-per-compile- /Qcomplex-limited-range /Qprec-div- %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -212,7 +201,6 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">
@@ -258,9 +246,11 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
       <AdditionalOptions>/Qansi-alias /Qinline-min-size- /Qinline-max-per-compile- /Qcomplex-limited-range /Qprec-div- %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast2</FloatingPointModel>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
