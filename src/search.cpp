@@ -306,6 +306,7 @@ namespace {
                              : search<PvNode, false>(pos, ss, alpha, beta, depth, ply);
   }
 
+  Value value_from_tt(Value v, int ply);
   template <NodeType PvNode>
   inline bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply) {
 
@@ -331,7 +332,6 @@ namespace {
   bool connected_moves(const Position& pos, Move m1, Move m2);
   bool value_is_mate(Value value);
   Value value_to_tt(Value v, int ply);
-  Value value_from_tt(Value v, int ply);
 
 #ifdef USE_EGTB
   Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta);
