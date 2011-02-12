@@ -311,13 +311,17 @@ namespace {
 
     Value v = value_from_tt(tte->value(), ply);
 
-    return  (   tte->depth() >= depth
-             || v >= Max(value_mate_in(PLY_MAX), beta)
-             || v <= Min(value_mated_in(PLY_MAX), alpha))
-          &&
-            (PvNode ? tte->type() == VALUE_TYPE_EXACT
-                    : (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
-                       || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha)));
+    return
+    PvNode ?    tte->type() == VALUE_TYPE_EXACT
+             && (   tte->depth() >= depth
+                 || v >= value_mate_in(PLY_MAX)
+                 || v <= value_mated_in(PLY_MAX))
+
+           :    (   tte->depth() >= depth
+                 || v >= Max(value_mate_in(PLY_MAX), beta)
+                 || v <= Min(value_mated_in(PLY_MAX), alpha))
+             && (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
+                 || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha));
   }
 
   template <NodeType PvNode>
