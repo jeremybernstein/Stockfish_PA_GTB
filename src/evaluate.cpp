@@ -77,9 +77,6 @@ namespace {
     int kingAdjacentZoneAttacksCount[2];
   };
 
-  // Evaluation grain size, must be a power of 2
-  const int GrainSize = 8;
-
   // Evaluation weights, initialized from UCI options
   enum { Mobility, PawnStructure, PassedPawns, Space, KingDangerUs, KingDangerThem };
   Score Weights[6];

@@ -653,7 +653,7 @@ namespace {
             int prevDelta2 = ValueByIteration[Iteration - 2] - ValueByIteration[Iteration - 3];
 
             AspirationDelta = Max(abs(prevDelta1) + abs(prevDelta2) / 2, 16);
-            AspirationDelta = (AspirationDelta + 7) / 8 * 8; // Round to match grainSize
+            AspirationDelta = (AspirationDelta + 7) / GrainSize * GrainSize; // Round to match grainSize
 
             alpha = Max(ValueByIteration[Iteration - 1] - AspirationDelta, -VALUE_INFINITE);
             beta  = Min(ValueByIteration[Iteration - 1] + AspirationDelta,  VALUE_INFINITE);

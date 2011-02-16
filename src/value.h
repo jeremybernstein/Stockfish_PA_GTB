@@ -53,6 +53,8 @@ enum ScaleFactor {
   SCALE_FACTOR_NONE   = 255
 };
 
+// Evaluation grain size, must be a power of 2
+const int GrainSize = 2;
 
 /// Score enum keeps a midgame and an endgame value in a single
 /// integer (enum), first LSB 16 bits are used to store endgame
