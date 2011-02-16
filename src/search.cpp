@@ -592,6 +592,9 @@ namespace {
     Move EasyMove = MOVE_NONE;
     Value value, alpha = -VALUE_INFINITE, beta = VALUE_INFINITE;
 
+#ifdef USE_EGTB
+    pos.set_tb_hits(0); // reset tbhits before doing the root search
+#endif
     // Moves to search are verified, scored and sorted
     RootMoveList rml(pos, searchMoves);
 
@@ -1551,19 +1554,8 @@ split_point_start: // At split points actual search starts from here
     isCheck = pos.is_check();
     ttDepth = (isCheck || depth >= DEPTH_QS_CHECKS ? DEPTH_QS_CHECKS : DEPTH_QS_NO_CHECKS);
 
-    // Transposition table lookup. At PV nodes, we don't use the TT for
-    // pruning, but only for move ordering.
-    tte = TT.retrieve(pos.get_key());
-    ttMove = (tte ? tte->move() : MOVE_NONE);
-
-    if (tte && ok_to_use_TT<PvNode>(tte, ttDepth, alpha, beta, ply))
-    {
-        ss->bestMove = ttMove; // Can be MOVE_NONE
-        return value_from_tt(tte->value(), ply);
-    }
-
 #ifdef USE_EGTB
-    // EGTB probe
+    // EGTB probe - do this first
     if (   UseGaviotaTb
         && pos.total_piece_count() <= MaxEgtbPieces
         && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
@@ -1579,6 +1571,17 @@ split_point_start: // At split points actual search starts from here
         return tbValue;
     }
 #endif
+
+    // Transposition table lookup. At PV nodes, we don't use the TT for
+    // pruning, but only for move ordering.
+    tte = TT.retrieve(pos.get_key());
+    ttMove = (tte ? tte->move() : MOVE_NONE);
+
+    if (tte && ok_to_use_TT<PvNode>(tte, ttDepth, alpha, beta, ply))
+    {
+        ss->bestMove = ttMove; // Can be MOVE_NONE
+        return value_from_tt(tte->value(), ply);
+    }
 
     // Evaluate the position statically
     if (isCheck)
