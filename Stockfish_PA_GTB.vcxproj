@@ -138,7 +138,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;USE_EGTB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -161,7 +161,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;_WIN32;_DEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;_WIN32;_DEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;USE_EGTB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -206,7 +206,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>src\egtb\compression;src\egtb\compression\huffman;src\egtb\compression\liblzf;src\egtb\compression\lzma;src\egtb\compression\zlib;src\egtb\sysport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WINDOWS;OLD_LOCKS;Z_PREFIX;USE_EGTB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
