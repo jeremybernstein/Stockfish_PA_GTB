@@ -735,25 +735,22 @@ namespace {
   // of the RootMoveList, if it was a tablebase hit.
   Value root_tb_mainline(Position& pos, RootMoveList& rm) {
 
-    if (abs(rm[0].pv_score) >= abs(VALUE_MATE) - LONG_MATE) { // mate score, get the mainline
+    StateInfo state[PLY_MAX_PLUS_2], *st = state;
+    int index = 0;
+    Move searchMoves[1];
+    searchMoves[0] = MOVE_NONE;
 
-        StateInfo state[PLY_MAX_PLUS_2], *st = state;
-        int index = 0;
-        Move searchMoves[1];
-        searchMoves[0] = MOVE_NONE;
+    while (1) {
+        pos.do_move(rm[0].pv[index++], *st++);
+        RootMoveList rml(pos, searchMoves);
+        if (rml.size() && !pos.is_draw() && index <= PLY_MAX) {
+            rm[0].pv[index] = rml[0].pv[0];
+        } else break;
+    }
+    rm[0].pv[index] = MOVE_NONE;
 
-        while (1) {
-            pos.do_move(rm[0].pv[index++], *st++);
-            RootMoveList rml(pos, searchMoves);
-            if (rml.size() && abs(rml[0].pv_score) >= abs(VALUE_MATE) - LONG_MATE && index <= PLY_MAX) {
-                rm[0].pv[index] = rml[0].pv[0];
-            } else break;
-        }
-        rm[0].pv[index] = MOVE_NONE;
-
-        while (index--) { // back out
-            pos.undo_move(rm[0].pv[index]);
-        }
+    while (index--) { // back out
+        pos.undo_move(rm[0].pv[index]);
     }
     return VALUE_NONE;
   }
