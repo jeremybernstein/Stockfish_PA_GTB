@@ -612,7 +612,12 @@ namespace {
 
     Iteration = 1;
 #ifdef USE_EGTB
-    if (pos.tb_hits_root()) { // it might be nice to iterate through then entire main line a la houdini at some point
+    if (   UseGaviotaTb // Why do we check this again? It's possible that a move tested was a capture
+                        // which reduces the total piece count to below MaxEgtbPieces. So we might have
+                        // had a tb hit that can't be trusted, since it was only one line, not all lines.
+        && pos.total_piece_count() <= MaxEgtbPieces 
+        && pos.tb_hits_root()) 
+    {
         cout << set960(pos.is_chess960()) // Is enough to set once at the beginning
              << "info depth " << Iteration << endl;
         root_tb_mainline(pos, rml);
