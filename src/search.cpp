@@ -1545,16 +1545,15 @@ split_point_start: // At split points actual search starts from here
     if (pos.is_draw() || ply >= PLY_MAX - 1)
         return VALUE_DRAW;
 
-    // Decide whether or not to include checks, this fixes also the type of
-    // TT entry depth that we are going to use. Note that in qsearch we use
-    // only two types of depth in TT: DEPTH_QS_CHECKS or DEPTH_QS_NO_CHECKS.
-    isCheck = pos.is_check();
-    ttDepth = (isCheck || depth >= DEPTH_QS_CHECKS ? DEPTH_QS_CHECKS : DEPTH_QS_NO_CHECKS);
-
 #ifdef USE_EGTB
     // EGTB probe - do this first
     if (   UseGaviotaTb
         && pos.total_piece_count() <= MaxEgtbPieces
+        && !depth // Only do this at the base of the search, or we risk having tb hits for moves later in the variation.
+                  // This might be interesting to experiment with, of course. If we know that a certain line leads to mate,
+                  // we should use that information. But we'd need a way of knowing that the tb hits belong to a particular
+                  // line, and not to the position, given the way we're determining when to stop searching in order to display
+                  // a tablebase line.
         && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
     {
         // Store it in the TT for next time...
@@ -1568,6 +1567,12 @@ split_point_start: // At split points actual search starts from here
         return tbValue;
     }
 #endif
+
+    // Decide whether or not to include checks, this fixes also the type of
+    // TT entry depth that we are going to use. Note that in qsearch we use
+    // only two types of depth in TT: DEPTH_QS_CHECKS or DEPTH_QS_NO_CHECKS.
+    isCheck = pos.is_check();
+    ttDepth = (isCheck || depth >= DEPTH_QS_CHECKS ? DEPTH_QS_CHECKS : DEPTH_QS_NO_CHECKS);
 
     // Transposition table lookup. At PV nodes, we don't use the TT for
     // pruning, but only for move ordering.
