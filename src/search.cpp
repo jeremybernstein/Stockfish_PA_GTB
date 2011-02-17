@@ -594,6 +594,7 @@ namespace {
 
 #ifdef USE_EGTB
     pos.set_tb_hits(0); // reset tbhits before doing the root search
+    pos.set_tb_hits_root(0); // reset tbhits before doing the root search
 #endif
     // Moves to search are verified, scored and sorted
     RootMoveList rml(pos, searchMoves);
@@ -611,7 +612,7 @@ namespace {
 
     Iteration = 1;
 #ifdef USE_EGTB
-    if (pos.tb_hits()) { // it might be nice to iterate through then entire main line a la houdini at some point
+    if (pos.tb_hits_root()) { // it might be nice to iterate through then entire main line a la houdini at some point
         cout << set960(pos.is_chess960()) // Is enough to set once at the beginning
              << "info depth " << Iteration << endl;
         root_tb_mainline(pos, rml);
@@ -1549,11 +1550,6 @@ split_point_start: // At split points actual search starts from here
     // EGTB probe - do this first
     if (   UseGaviotaTb
         && pos.total_piece_count() <= MaxEgtbPieces
-        && !depth // Only do this at the base of the search, or we risk having tb hits for moves later in the variation.
-                  // This might be interesting to experiment with, of course. If we know that a certain line leads to mate,
-                  // we should use that information. But we'd need a way of knowing that the tb hits belong to a particular
-                  // line, and not to the position, given the way we're determining when to stop searching in order to display
-                  // a tablebase line.
         && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
     {
         // Store it in the TT for next time...
@@ -1563,6 +1559,10 @@ split_point_start: // At split points actual search starts from here
             TT.store(pos.get_key(), tbValue, VALUE_TYPE_UPPER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
         else
             TT.store(pos.get_key(), value_to_tt(tbValue, ply), VALUE_TYPE_EXACT, depth, MOVE_NONE, tbValue, VALUE_ZERO);
+
+        if (depth == 0) { // We're at the base of the search. Update the tbhits at the root so that we abort.
+            pos.set_tb_hits_root(pos.tb_hits());
+        }
 
         return tbValue;
     }

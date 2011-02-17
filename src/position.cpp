@@ -151,6 +151,7 @@ Position::Position(const Position& pos, int th) {
   threadID = th;
   nodes = 0;
   tbhits = 0;
+  tbhits_root = 0;
 }
 
 Position::Position(const string& fen, bool isChess960, int th) {
@@ -158,6 +159,7 @@ Position::Position(const string& fen, bool isChess960, int th) {
   from_fen(fen, isChess960);
   threadID = th;
   tbhits = 0;
+  tbhits_root = 0;
 }
 
 
@@ -1515,6 +1517,7 @@ void Position::clear() {
   startPosPlyCounter = 0;
   nodes = 0;
   tbhits = 0;
+  tbhits_root = 0;
   totalPieceCount = 0;
 
   memset(byColorBB,  0, sizeof(Bitboard) * 2);

@@ -271,6 +271,8 @@ public:
   void set_nodes_searched(int64_t n);
   int64_t tb_hits() const;
   void set_tb_hits(int64_t n);
+  int64_t tb_hits_root() const;
+  void set_tb_hits_root(int64_t n);
 
   // Position consistency check, for debugging
   bool is_ok(int* failedStep = NULL) const;
@@ -332,6 +334,7 @@ private:
   int threadID;
   int64_t nodes;
   int64_t tbhits;
+  int64_t tbhits_root;
   StateInfo* st;
 
   // Static variables
@@ -365,6 +368,14 @@ inline int64_t Position::tb_hits() const {
 
 inline void Position::set_tb_hits(int64_t n) {
   tbhits = n;
+}
+
+inline int64_t Position::tb_hits_root() const {
+  return tbhits_root;
+}
+
+inline void Position::set_tb_hits_root(int64_t n) {
+  tbhits_root = n;
 }
 
 inline Piece Position::piece_on(Square s) const {
