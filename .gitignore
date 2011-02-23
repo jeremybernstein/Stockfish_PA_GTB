@@ -2,3 +2,9 @@
 *.mode1v3
 bench.txt
 build/
+*.sdf
+*.suo
+*.user
+ipch/
+Debug/
+Release/
