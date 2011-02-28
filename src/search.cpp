@@ -746,12 +746,17 @@ namespace {
     Move searchMoves[1];
     searchMoves[0] = MOVE_NONE;
 
+    if (UseTimeManagement && current_search_time() > TimeMgr.available_time() / 16)
+        return VALUE_NONE;
+
     while (1) {
         pos.do_move(rm[0].pv[index++], *st++);
         RootMoveList rml(pos, searchMoves);
         if (rml.size() && !pos.is_draw() && index <= PLY_MAX) {
             rm[0].pv[index] = rml[0].pv[0];
         } else break;
+        if (UseTimeManagement && current_search_time() > TimeMgr.available_time() / 16)
+            break;
     }
     rm[0].pv[index] = MOVE_NONE;
 
