@@ -1100,7 +1100,8 @@ namespace {
     
 #ifdef USE_EGTB
     // Step 4b. EGTB probe
-    if (   UseGaviotaTb && !ProbeOnlyAtRoot
+    if (   UseGaviotaTb 
+        && !ProbeOnlyAtRoot
         && pos.total_piece_count() <= MaxEgtbPieces
         && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
     {
