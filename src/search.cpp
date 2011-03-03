@@ -1102,8 +1102,10 @@ namespace {
     // Step 4b. EGTB probe
     if (   UseGaviotaTb 
         && !ProbeOnlyAtRoot
+        // if we are on the clock, and there's not much time left, don't probe
+        && (!(UseTimeManagement && current_search_time() > TimeMgr.available_time() / 16))
         && pos.total_piece_count() <= MaxEgtbPieces
-        && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
+        && ((tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE) )
     {
         if (tbValue == VALUE_KNOWN_WIN)
             TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
@@ -1561,7 +1563,7 @@ split_point_start: // At split points actual search starts from here
     // EGTB probe - do this first
     if (   UseGaviotaTb
         && pos.total_piece_count() <= MaxEgtbPieces
-        && (tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE)
+        && ((tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE) )
     {
         // Store it in the TT for next time...
         if (tbValue == VALUE_KNOWN_WIN)
