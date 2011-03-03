@@ -334,7 +334,7 @@ namespace {
   Value value_to_tt(Value v, int ply);
 
 #ifdef USE_EGTB
-  Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta);
+  Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta, bool forcesoft);
   Value root_tb_mainline(Position& pos, RootMoveList& rm);
 #endif
   bool connected_threat(const Position& pos, Move m, Move threat);
@@ -1102,10 +1102,8 @@ namespace {
     // Step 4b. EGTB probe
     if (   UseGaviotaTb 
         && !ProbeOnlyAtRoot
-        // if we are on the clock, and there's not much time left, don't probe
-        && (!(UseTimeManagement && current_search_time() > TimeMgr.available_time() / 16))
         && pos.total_piece_count() <= MaxEgtbPieces
-        && ((tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE) )
+        && ((tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta, (UseTimeManagement && current_search_time() > TimeMgr.available_time() / 16))) != VALUE_NONE) )
     {
         if (tbValue == VALUE_KNOWN_WIN)
             TT.store(pos.get_key(), tbValue, VALUE_TYPE_LOWER, depth, MOVE_NONE, tbValue, VALUE_ZERO);
@@ -1563,7 +1561,7 @@ split_point_start: // At split points actual search starts from here
     // EGTB probe - do this first
     if (   UseGaviotaTb
         && pos.total_piece_count() <= MaxEgtbPieces
-        && ((tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta)) != VALUE_NONE) )
+        && ((tbValue = attempt_probe_egtb(pos, true, ply, depth, alpha, beta, false)) != VALUE_NONE) )
     {
         // Store it in the TT for next time...
         if (tbValue == VALUE_KNOWN_WIN)
@@ -2001,13 +1999,13 @@ split_point_start: // At split points actual search starts from here
 #ifdef USE_EGTB
   // attempt_probe_egtb() probes EGTB.
 
-  Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta)
+  Value attempt_probe_egtb(Position& pos, bool pvNode, int ply, Depth depth, Value alpha, Value beta, bool forcesoft)
   {
       bool hard;
       bool exact;
 
       if (depth >= 8 * ONE_PLY || ply <= 1 || (pvNode && depth >= 5 * ONE_PLY))
-          hard = true;
+          hard = forcesoft ? false : true;
       else if (depth > Depth(0) || pvNode)
           hard = false;
       else
