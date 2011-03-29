@@ -1120,10 +1120,8 @@ namespace {
     // update gain statistics of parent move.
     if (isCheck)
         ss->eval = ss->evalMargin = VALUE_NONE;
-    else if (tte)
+    else if (tte && tte->static_value() != VALUE_NONE)
     {
-        assert(tte->static_value() != VALUE_NONE);
-
         ss->eval = tte->static_value();
         ss->evalMargin = tte->static_value_margin();
         refinedValue = refine_eval(tte, ss->eval, ply);
@@ -1148,10 +1146,16 @@ namespace {
     {
         Value rbeta = beta - razor_margin(depth);
         Value v = qsearch<NonPV>(pos, ss, rbeta-1, rbeta, DEPTH_ZERO, ply);
-        if (v < rbeta)
+        if (v < rbeta) {
+            // OLD NOTE:
             // Logically we should return (v + razor_margin(depth)), but
             // surprisingly this did slightly weaker in tests.
-            return v;
+            // 
+            // Undid & now return the "logical" value. This fixes problems 
+            // with false fail high/low behavior.
+            // - jeremy bernstein
+            return (v + razor_margin(depth)); // return v;
+        }
     }
 
     // Step 7. Static null move pruning (is omitted in PV nodes)
@@ -1607,10 +1611,13 @@ split_point_start: // At split points actual search starts from here
     {
         if (tte)
         {
-            assert(tte->static_value() != VALUE_NONE);
-
-            evalMargin = tte->static_value_margin();
-            ss->eval = bestValue = tte->static_value();
+            if (tte->static_value() != VALUE_NONE)
+            {
+                evalMargin = tte->static_value_margin();
+                ss->eval = bestValue = tte->static_value();
+            }
+            else
+                tte = NULL;
         }
         else
             ss->eval = bestValue = evaluate(pos, evalMargin);
