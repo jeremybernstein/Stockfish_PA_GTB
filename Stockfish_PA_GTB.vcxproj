@@ -130,9 +130,9 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
