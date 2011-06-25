@@ -17,35 +17,19 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if !defined(POSITION_H_INCLUDED)
 #define POSITION_H_INCLUDED
 
-////
-//// Includes
-////
-
 #include "bitboard.h"
-#include "color.h"
 #include "move.h"
-#include "piece.h"
-#include "square.h"
-#include "value.h"
-
-
-////
-//// Constants
-////
+#include "types.h"
 
 /// Maximum number of plies per game (220 should be enough, because the
 /// maximum search depth is 100, and during position setup we reset the
 /// move counter for every non-reversible move).
 const int MaxGameLength = 220;
 
-
-////
-//// Types
-////
+class Position;
 
 /// struct checkInfo is initialized at c'tor time and keeps
 /// info used to detect if a move gives check.
@@ -120,9 +104,6 @@ struct StateInfo {
 
 class Position {
 
-  friend class MaterialInfo;
-  friend class EndgameFunctions;
-
   Position(); // No default or copy c'tor allowed
   Position(const Position& pos);
 
@@ -142,7 +123,7 @@ public:
   void print(Move m = MOVE_NONE) const;
 
   // Copying
-  void flipped_copy(const Position& pos);
+  void flip();
 
   // The piece on a given square
   Piece piece_on(Square s) const;
@@ -188,7 +169,7 @@ public:
 
   // Checking pieces and under check information
   Bitboard checkers() const;
-  bool is_check() const;
+  bool in_check() const;
 
   // Piece lists
   Square piece_list(Color c, PieceType pt, int index) const;
@@ -204,8 +185,10 @@ public:
   // Properties of moves
   bool pl_move_is_legal(Move m, Bitboard pinned) const;
   bool pl_move_is_evasion(Move m, Bitboard pinned) const;
-  bool move_is_check(Move m) const;
-  bool move_is_check(Move m, const CheckInfo& ci) const;
+  bool move_is_legal(const Move m) const;
+  bool move_is_legal(const Move m, Bitboard pinned) const;
+  bool move_gives_check(Move m) const;
+  bool move_gives_check(Move m, const CheckInfo& ci) const;
   bool move_is_capture(Move m) const;
   bool move_is_capture_or_promotion(Move m) const;
   bool move_is_passed_pawn_push(Move m) const;
@@ -221,7 +204,7 @@ public:
   bool square_is_weak(Square s, Color c) const;
 
   // Doing and undoing moves
-  void detach();
+  void do_setup_move(Move m);
   void do_move(Move m, StateInfo& st);
   void do_move(Move m, StateInfo& st, const CheckInfo& ci, bool moveIsCheck);
   void undo_move(Move m);
@@ -248,12 +231,7 @@ public:
   bool is_mate() const;
   bool is_draw() const;
 
-  // Check if side to move could be mated in one
-  bool has_mate_threat();
-
-  // Number of plies since the last non-reversible move
-  int rule_50_counter() const;
-
+  // Number of plies from starting position
   int startpos_ply_counter() const;
 
   // Other properties of the position
@@ -264,9 +242,6 @@ public:
   // Current thread ID searching on the position
   int thread() const;
 
-  // Reset the gamePly variable to 0
-  void reset_game_ply();
-  void inc_startpos_ply_counter();
   int64_t nodes_searched() const;
   void set_nodes_searched(int64_t n);
   int64_t tb_hits() const;
@@ -285,6 +260,7 @@ private:
 
   // Initialization helper functions (used while setting up a position)
   void clear();
+  void detach();
   void put_piece(Piece p, Square s);
   void do_allow_oo(Color c);
   void do_allow_ooo(Color c);
@@ -329,7 +305,7 @@ private:
   int castleRightsMask[64];
   StateInfo startState;
   File initialKFile, initialKRFile, initialQRFile;
-  bool isChess960;
+  bool chess960;
   int startPosPlyCounter;
   int threadID;
   int64_t nodes;
@@ -348,11 +324,6 @@ private:
   static const Value PieceValueMidgame[17];
   static const Value PieceValueEndgame[17];
 };
-
-
-////
-//// Inline functions
-////
 
 inline int64_t Position::nodes_searched() const {
   return nodes;
@@ -484,12 +455,12 @@ inline Square Position::initial_qr_square(Color c) const {
 
 template<>
 inline Bitboard Position::attacks_from<PAWN>(Square s, Color c) const {
-  return StepAttackBB[piece_of_color_and_type(c, PAWN)][s];
+  return StepAttacksBB[make_piece(c, PAWN)][s];
 }
 
 template<PieceType Piece> // Knight and King and white pawns
 inline Bitboard Position::attacks_from(Square s) const {
-  return StepAttackBB[Piece][s];
+  return StepAttacksBB[Piece][s];
 }
 
 template<>
@@ -511,7 +482,7 @@ inline Bitboard Position::checkers() const {
   return st->checkersBB;
 }
 
-inline bool Position::is_check() const {
+inline bool Position::in_check() const {
   return st->checkersBB != EmptyBoardBB;
 }
 
@@ -540,7 +511,7 @@ inline Key Position::get_material_key() const {
 }
 
 inline Score Position::pst(Color c, PieceType pt, Square s) {
-  return PieceSquareTable[piece_of_color_and_type(c, pt)][s];
+  return PieceSquareTable[make_piece(c, pt)][s];
 }
 
 inline Score Position::pst_delta(Piece piece, Square from, Square to) {
@@ -558,12 +529,8 @@ inline Value Position::non_pawn_material(Color c) const {
 inline bool Position::move_is_passed_pawn_push(Move m) const {
 
   Color c = side_to_move();
-  return   piece_on(move_from(m)) == piece_of_color_and_type(c, PAWN)
+  return   piece_on(move_from(m)) == make_piece(c, PAWN)
         && pawn_is_passed(c, move_to(m));
-}
-
-inline int Position::rule_50_counter() const {
-  return st->rule50;
 }
 
 inline int Position::startpos_ply_counter() const {
@@ -572,17 +539,16 @@ inline int Position::startpos_ply_counter() const {
 
 inline bool Position::opposite_colored_bishops() const {
 
-  return   piece_count(WHITE, BISHOP) == 1
-        && piece_count(BLACK, BISHOP) == 1
-        && !same_color_squares(piece_list(WHITE, BISHOP, 0), piece_list(BLACK, BISHOP, 0));
+  return   piece_count(WHITE, BISHOP) == 1 && piece_count(BLACK, BISHOP) == 1
+        && opposite_color_squares(piece_list(WHITE, BISHOP, 0), piece_list(BLACK, BISHOP, 0));
 }
 
 inline bool Position::has_pawn_on_7th(Color c) const {
-  return pieces(PAWN, c) & relative_rank_bb(c, RANK_7);
+  return pieces(PAWN, c) & rank_bb(relative_rank(c, RANK_7));
 }
 
 inline bool Position::is_chess960() const {
-  return isChess960;
+  return chess960;
 }
 
 inline bool Position::move_is_capture(Move m) const {

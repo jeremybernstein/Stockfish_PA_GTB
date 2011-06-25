@@ -17,23 +17,11 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if !defined(HISTORY_H_INCLUDED)
 #define HISTORY_H_INCLUDED
 
-////
-//// Includes
-////
-
-#include "depth.h"
-#include "move.h"
-#include "piece.h"
-#include "value.h"
-
-
-////
-//// Types
-////
+#include <cstring>
+#include "types.h"
 
 /// The History class stores statistics about how often different moves
 /// have been successful or unsuccessful during the current search. These
@@ -45,45 +33,38 @@
 class History {
 
 public:
-  History();
   void clear();
-  void success(Piece p, Square to, Depth d);
-  void failure(Piece p, Square to, Depth d);
-  int value(Piece p, Square to) const;
-  void set_gain(Piece p, Square to, Value delta);
+  Value value(Piece p, Square to) const;
+  void update(Piece p, Square to, Value bonus);
   Value gain(Piece p, Square to) const;
+  void update_gain(Piece p, Square to, Value g);
+
+  static const Value MaxValue = Value(2000);
 
 private:
-  int history[16][64];  // [piece][square]
-  int maxStaticValueDelta[16][64];  // [piece][from_square][to_square]
+  Value history[16][64];  // [piece][to_square]
+  Value maxGains[16][64]; // [piece][to_square]
 };
 
+inline void History::clear() {
+  memset(history,  0, 16 * 64 * sizeof(Value));
+  memset(maxGains, 0, 16 * 64 * sizeof(Value));
+}
 
-////
-//// Constants and variables
-////
-
-/// HistoryMax controls how often the history counters will be scaled down:
-/// When the history score for a move gets bigger than HistoryMax, all
-/// entries in the table are divided by 2. It is difficult to guess what
-/// the ideal value of this constant is. Scaling down the scores often has
-/// the effect that parts of the search tree which have been searched
-/// recently have a bigger importance for move ordering than the moves which
-/// have been searched a long time ago.
-
-const int HistoryMax = 50000 * ONE_PLY;
-
-
-////
-//// Inline functions
-////
-
-inline int History::value(Piece p, Square to) const {
+inline Value History::value(Piece p, Square to) const {
   return history[p][to];
 }
 
+inline void History::update(Piece p, Square to, Value bonus) {
+  if (abs(history[p][to] + bonus) < MaxValue) history[p][to] += bonus;
+}
+
 inline Value History::gain(Piece p, Square to) const {
-  return Value(maxStaticValueDelta[p][to]);
+  return maxGains[p][to];
+}
+
+inline void History::update_gain(Piece p, Square to, Value g) {
+  maxGains[p][to] = Max(g, maxGains[p][to] - 1);
 }
 
 #endif // !defined(HISTORY_H_INCLUDED)

@@ -17,23 +17,15 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if !defined(MATERIAL_H_INCLUDED)
 #define MATERIAL_H_INCLUDED
 
-////
-//// Includes
-////
-
 #include "endgame.h"
 #include "position.h"
+#include "tt.h"
+#include "types.h"
 
-
-////
-//// Types
-////
-
-const int MaterialTableSize = 1024;
+const int MaterialTableSize = 8192;
 
 /// MaterialInfo is a class which contains various information about a
 /// material configuration. It contains a material balance evaluation,
@@ -61,48 +53,30 @@ private:
   Key key;
   int16_t value;
   uint8_t factor[2];
-  EndgameEvaluationFunctionBase* evaluationFunction;
-  EndgameScalingFunctionBase* scalingFunction[2];
+  EndgameBase<Value>* evaluationFunction;
+  EndgameBase<ScaleFactor>* scalingFunction[2];
   int spaceWeight;
   Phase gamePhase;
 };
 
-/// The MaterialInfoTable class represents a pawn hash table. It is basically
-/// just an array of MaterialInfo objects and a few methods for accessing these
-/// objects. The most important method is get_material_info, which looks up a
-/// position in the table and returns a pointer to a MaterialInfo object.
-class EndgameFunctions;
 
-class MaterialInfoTable {
+/// The MaterialInfoTable class represents a pawn hash table. The most important
+/// method is get_material_info, which returns a pointer to a MaterialInfo object.
 
-  MaterialInfoTable(const MaterialInfoTable&);
-  MaterialInfoTable& operator=(const MaterialInfoTable&);
-
+class MaterialInfoTable : public SimpleHash<MaterialInfo, MaterialTableSize> {
 public:
-  MaterialInfoTable();
   ~MaterialInfoTable();
-  MaterialInfo* get_material_info(const Position& pos);
-
+  void init();
+  MaterialInfo* get_material_info(const Position& pos) const;
   static Phase game_phase(const Position& pos);
 
 private:
-  MaterialInfo* entries;
-  EndgameFunctions* funcs;
+  template<Color Us>
+  static int imbalance(const int pieceCount[][8]);
+
+  Endgames* funcs;
 };
 
-
-////
-//// Inline functions
-////
-
-
-/// MaterialInfo::material_value simply returns the material balance
-/// evaluation that is independent from game phase.
-
-inline Score MaterialInfo::material_value() const {
-
-  return make_score(value, value);
-}
 
 /// MaterialInfo::scale_factor takes a position and a color as input, and
 /// returns a scale factor for the given color. We have to provide the
@@ -113,50 +87,31 @@ inline Score MaterialInfo::material_value() const {
 
 inline ScaleFactor MaterialInfo::scale_factor(const Position& pos, Color c) const {
 
-  if (scalingFunction[c] != NULL)
-  {
-      ScaleFactor sf = scalingFunction[c]->apply(pos);
-      if (sf != SCALE_FACTOR_NONE)
-          return sf;
-  }
-  return ScaleFactor(factor[c]);
+  if (!scalingFunction[c])
+      return ScaleFactor(factor[c]);
+
+  ScaleFactor sf = scalingFunction[c]->apply(pos);
+  return sf == SCALE_FACTOR_NONE ? ScaleFactor(factor[c]) : sf;
 }
 
+inline Value MaterialInfo::evaluate(const Position& pos) const {
+  return evaluationFunction->apply(pos);
+}
 
-/// MaterialInfo::space_weight() simply returns the weight for the space
-/// evaluation for this material configuration.
+inline Score MaterialInfo::material_value() const {
+  return make_score(value, value);
+}
 
 inline int MaterialInfo::space_weight() const {
-
   return spaceWeight;
 }
 
-/// MaterialInfo::game_phase() returns the game phase according
-/// to this material configuration.
-
 inline Phase MaterialInfo::game_phase() const {
-
   return gamePhase;
 }
 
-
-/// MaterialInfo::specialized_eval_exists decides whether there is a
-/// specialized evaluation function for the current material configuration,
-/// or if the normal evaluation function should be used.
-
 inline bool MaterialInfo::specialized_eval_exists() const {
-
   return evaluationFunction != NULL;
-}
-
-
-/// MaterialInfo::evaluate applies a specialized evaluation function
-/// to a given position object. It should only be called when
-/// specialized_eval_exists() returns 'true'.
-
-inline Value MaterialInfo::evaluate(const Position& pos) const {
-
-  return evaluationFunction->apply(pos);
 }
 
 #endif // !defined(MATERIAL_H_INCLUDED)

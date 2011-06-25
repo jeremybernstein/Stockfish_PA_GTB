@@ -17,21 +17,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-/*
-  The code in this file is based on the opening book code in PolyGlot
-  by Fabien Letouzey.  PolyGlot is available under the GNU General
-  Public License, and can be downloaded from http://wbec-ridderkerk.nl
-*/
-
-
 #if !defined(BOOK_H_INCLUDED)
 #define BOOK_H_INCLUDED
-
-
-////
-//// Includes
-////
 
 #include <fstream>
 #include <string>
@@ -41,39 +28,33 @@
 #include "rkiss.h"
 
 
-////
-//// Types
-////
-
+// A Polyglot book is a series of "entries" of 16 bytes. All integers are
+// stored highest byte first (regardless of size). The entries are ordered
+// according to key. Lowest key first.
 struct BookEntry {
   uint64_t key;
   uint16_t move;
   uint16_t count;
-  uint16_t n;
-  uint16_t sum;
+  uint32_t learn;
 };
 
-class Book : private std::ifstream {
-  Book(const Book&); // just decleared..
-  Book& operator=(const Book&); // ..to avoid a warning
+class Book {
 public:
   Book();
   ~Book();
-  void open(const std::string& fName);
+  void open(const std::string& fileName);
   void close();
-  const std::string file_name();
   Move get_move(const Position& pos, bool findBestMove);
+  const std::string name() const { return bookName; }
 
 private:
-  Book& operator>>(uint64_t& n) { n = read_integer(8); return *this; }
-  Book& operator>>(uint16_t& n) { n = (uint16_t)read_integer(2); return *this; }
-  void operator>>(BookEntry& e) { *this >> e.key >> e.move >> e.count >> e.n >> e.sum; }
+  template<typename T> void get_number(T& n);
 
-  uint64_t read_integer(int size);
-  void read_entry(BookEntry& e, int n);
-  int find_key(uint64_t key);
+  BookEntry read_entry(int idx);
+  int find_entry(uint64_t key);
 
-  std::string fileName;
+  std::ifstream bookFile;
+  std::string bookName;
   int bookSize;
   RKISS RKiss;
 };

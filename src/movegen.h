@@ -17,29 +17,24 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if !defined(MOVEGEN_H_INCLUDED)
 #define MOVEGEN_H_INCLUDED
 
-////
-//// Includes
-////
-
+#include "move.h"
 #include "position.h"
 
+enum MoveType {
+  MV_CAPTURE,
+  MV_NON_CAPTURE,
+  MV_CHECK,
+  MV_NON_CAPTURE_CHECK,
+  MV_EVASION,
+  MV_NON_EVASION,
+  MV_LEGAL,
+  MV_PSEUDO_LEGAL
+};
 
-////
-//// Prototypes
-////
-
-extern MoveStack* generate_captures(const Position& pos, MoveStack* mlist);
-extern MoveStack* generate_noncaptures(const Position& pos, MoveStack* mlist);
-extern MoveStack* generate_non_capture_checks(const Position& pos, MoveStack* mlist);
-extern MoveStack* generate_evasions(const Position& pos, MoveStack* mlist);
-extern MoveStack* generate_non_evasions(const Position& pos, MoveStack* mlist);
-extern MoveStack* generate_moves(const Position& pos, MoveStack* mlist, bool pseudoLegal = false);
-extern bool move_is_legal(const Position& pos, const Move m, Bitboard pinned);
-extern bool move_is_legal(const Position& pos, const Move m);
-
+template<MoveType>
+MoveStack* generate(const Position& pos, MoveStack* mlist);
 
 #endif // !defined(MOVEGEN_H_INCLUDED)

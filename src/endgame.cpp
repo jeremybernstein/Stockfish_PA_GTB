@@ -17,26 +17,21 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-////
-//// Includes
-////
-
 #include <cassert>
 
 #include "bitcount.h"
 #include "endgame.h"
+#include "pawns.h"
 
+using std::string;
 
-////
-//// Local definitions
-////
+extern uint32_t probe_kpk_bitbase(Square wksq, Square wpsq, Square bksq, Color stm);
 
 namespace {
 
   // Table used to drive the defending king towards the edge of the board
   // in KX vs K and KQ vs KR endgames.
-  const uint8_t MateTable[64] = {
+  const int MateTable[64] = {
     100, 90, 80, 70, 70, 80, 90, 100,
      90, 70, 60, 50, 50, 60, 70,  90,
      80, 60, 40, 30, 30, 40, 60,  80,
@@ -49,7 +44,7 @@ namespace {
 
   // Table used to drive the defending king towards a corner square of the
   // right color in KBN vs K endgames.
-  const uint8_t KBNKMateTable[64] = {
+  const int KBNKMateTable[64] = {
     200, 190, 180, 170, 160, 150, 140, 130,
     190, 180, 170, 160, 150, 140, 130, 140,
     180, 170, 155, 140, 140, 125, 140, 150,
@@ -68,44 +63,95 @@ namespace {
   // and knight in KR vs KN endgames.
   const int KRKNKingKnightDistancePenalty[8] = { 0, 0, 4, 10, 20, 32, 48, 70 };
 
-  // Bitbase for KP vs K
-  uint8_t KPKBitbase[24576];
+  // Build corresponding key code for the opposite color: "KBPKN" -> "KNKBP"
+  const string swap_colors(const string& keyCode) {
 
-  // Various inline functions for accessing the above arrays
-  inline Value mate_table(Square s) {
-    return Value(MateTable[s]);
+    size_t idx = keyCode.find('K', 1);
+    return keyCode.substr(idx) + keyCode.substr(0, idx);
   }
 
-  inline Value kbnk_mate_table(Square s) {
-    return Value(KBNKMateTable[s]);
+  // Get the material key of a position out of the given endgame key code
+  // like "KBPKN". The trick here is to first build up a FEN string and then
+  // let a Position object to do the work for us. Note that the FEN string
+  // could correspond to an illegal position.
+  Key mat_key(const string& keyCode) {
+
+    assert(keyCode.length() > 0 && keyCode.length() < 8);
+    assert(keyCode[0] == 'K');
+
+    string fen;
+    size_t i = 0;
+
+    // First add white and then black pieces
+    do fen += keyCode[i];                while (keyCode[++i] != 'K');
+    do fen += char(tolower(keyCode[i])); while (++i < keyCode.length());
+
+    // Add file padding and remaining empty ranks
+    fen += string(1, '0' + int(8 - keyCode.length())) + "/8/8/8/8/8/8/8 w - -";
+
+    // Build a Position out of the fen string and get its material key
+    return Position(fen, false, 0).get_material_key();
   }
 
-  inline Value distance_bonus(int d) {
-    return Value(DistanceBonus[d]);
-  }
+  typedef EndgameBase<Value> EF;
+  typedef EndgameBase<ScaleFactor> SF;
 
-  inline Value krkn_king_knight_distance_penalty(int d) {
-    return Value(KRKNKingKnightDistancePenalty[d]);
-  }
+} // namespace
 
-  // Function for probing the KP vs K bitbase
-  int probe_kpk(Square wksq, Square wpsq, Square bksq, Color stm);
 
+/// Endgames member definitions
+
+template<> const Endgames::EFMap& Endgames::get<EF>() const { return maps.first; }
+template<> const Endgames::SFMap& Endgames::get<SF>() const { return maps.second; }
+
+Endgames::Endgames() {
+
+  add<Endgame<Value, KNNK>  >("KNNK");
+  add<Endgame<Value, KPK>   >("KPK");
+  add<Endgame<Value, KBNK>  >("KBNK");
+  add<Endgame<Value, KRKP>  >("KRKP");
+  add<Endgame<Value, KRKB>  >("KRKB");
+  add<Endgame<Value, KRKN>  >("KRKN");
+  add<Endgame<Value, KQKR>  >("KQKR");
+  add<Endgame<Value, KBBKN> >("KBBKN");
+
+  add<Endgame<ScaleFactor, KNPK>    >("KNPK");
+  add<Endgame<ScaleFactor, KRPKR>   >("KRPKR");
+  add<Endgame<ScaleFactor, KBPKB>   >("KBPKB");
+  add<Endgame<ScaleFactor, KBPPKB>  >("KBPPKB");
+  add<Endgame<ScaleFactor, KBPKN>   >("KBPKN");
+  add<Endgame<ScaleFactor, KRPPKRP> >("KRPPKRP");
 }
 
+Endgames::~Endgames() {
 
-////
-//// Functions
-////
+  for (EFMap::const_iterator it = get<EF>().begin(); it != get<EF>().end(); ++it)
+      delete it->second;
 
-/// init_bitbases() is called during program initialization, and simply loads
-/// bitbases from disk into memory.  At the moment, there is only the bitbase
-/// for KP vs K, but we may decide to add other bitbases later.
-extern void generate_kpk_bitbase(uint8_t bitbase[]);
-
-void init_bitbases() {
-  generate_kpk_bitbase(KPKBitbase);
+  for (SFMap::const_iterator it = get<SF>().begin(); it != get<SF>().end(); ++it)
+      delete it->second;
 }
+
+template<class T>
+void Endgames::add(const string& keyCode) {
+
+  typedef typename T::Base F;
+  typedef std::map<Key, F*> M;
+
+  const_cast<M&>(get<F>()).insert(std::pair<Key, F*>(mat_key(keyCode), new T(WHITE)));
+  const_cast<M&>(get<F>()).insert(std::pair<Key, F*>(mat_key(swap_colors(keyCode)), new T(BLACK)));
+}
+
+template<class T>
+T* Endgames::get(Key key) const {
+
+  typename std::map<Key, T*>::const_iterator it = get<T>().find(key);
+  return it != get<T>().end() ? it->second : NULL;
+}
+
+// Explicit template instantiations
+template EF* Endgames::get<EF>(Key key) const;
+template SF* Endgames::get<SF>(Key key) const;
 
 
 /// Mate with KX vs K. This function is used to evaluate positions with
@@ -113,7 +159,7 @@ void init_bitbases() {
 /// attacking side a bonus for driving the defending king towards the edge
 /// of the board, and for keeping the distance between the two kings small.
 template<>
-Value EvaluationFunction<KXK>::apply(const Position& pos) const {
+Value Endgame<Value, KXK>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(weakerSide) == VALUE_ZERO);
   assert(pos.piece_count(weakerSide, PAWN) == VALUE_ZERO);
@@ -123,8 +169,8 @@ Value EvaluationFunction<KXK>::apply(const Position& pos) const {
 
   Value result =   pos.non_pawn_material(strongerSide)
                  + pos.piece_count(strongerSide, PAWN) * PawnValueEndgame
-                 + mate_table(loserKSq)
-                 + distance_bonus(square_distance(winnerKSq, loserKSq));
+                 + MateTable[loserKSq]
+                 + DistanceBonus[square_distance(winnerKSq, loserKSq)];
 
   if (   pos.piece_count(strongerSide, QUEEN)
       || pos.piece_count(strongerSide, ROOK)
@@ -139,7 +185,7 @@ Value EvaluationFunction<KXK>::apply(const Position& pos) const {
 /// Mate with KBN vs K. This is similar to KX vs K, but we have to drive the
 /// defending king towards a corner square of the right color.
 template<>
-Value EvaluationFunction<KBNK>::apply(const Position& pos) const {
+Value Endgame<Value, KBNK>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(weakerSide) == VALUE_ZERO);
   assert(pos.piece_count(weakerSide, PAWN) == VALUE_ZERO);
@@ -155,15 +201,15 @@ Value EvaluationFunction<KBNK>::apply(const Position& pos) const {
   // kbnk_mate_table() tries to drive toward corners A1 or H8,
   // if we have a bishop that cannot reach the above squares we
   // mirror the kings so to drive enemy toward corners A8 or H1.
-  if (!same_color_squares(bishopSquare, SQ_A1))
+  if (opposite_color_squares(bishopSquare, SQ_A1))
   {
       winnerKSq = flop_square(winnerKSq);
       loserKSq = flop_square(loserKSq);
   }
 
   Value result =  VALUE_KNOWN_WIN
-                + distance_bonus(square_distance(winnerKSq, loserKSq))
-                + kbnk_mate_table(loserKSq);
+                + DistanceBonus[square_distance(winnerKSq, loserKSq)]
+                + KBNKMateTable[loserKSq];
 
   return strongerSide == pos.side_to_move() ? result : -result;
 }
@@ -171,7 +217,7 @@ Value EvaluationFunction<KBNK>::apply(const Position& pos) const {
 
 /// KP vs K. This endgame is evaluated with the help of a bitbase.
 template<>
-Value EvaluationFunction<KPK>::apply(const Position& pos) const {
+Value Endgame<Value, KPK>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == VALUE_ZERO);
   assert(pos.non_pawn_material(weakerSide) == VALUE_ZERO);
@@ -203,7 +249,7 @@ Value EvaluationFunction<KPK>::apply(const Position& pos) const {
       wpsq = flop_square(wpsq);
   }
 
-  if (!probe_kpk(wksq, wpsq, bksq, stm))
+  if (!probe_kpk_bitbase(wksq, wpsq, bksq, stm))
       return VALUE_DRAW;
 
   Value result =  VALUE_KNOWN_WIN
@@ -219,7 +265,7 @@ Value EvaluationFunction<KPK>::apply(const Position& pos) const {
 /// far advanced with support of the king, while the attacking king is far
 /// away.
 template<>
-Value EvaluationFunction<KRKP>::apply(const Position& pos) const {
+Value Endgame<Value, KRKP>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == RookValueMidgame);
   assert(pos.piece_count(strongerSide, PAWN) == 0);
@@ -276,7 +322,7 @@ Value EvaluationFunction<KRKP>::apply(const Position& pos) const {
 /// KR vs KB. This is very simple, and always returns drawish scores.  The
 /// score is slightly bigger when the defending king is close to the edge.
 template<>
-Value EvaluationFunction<KRKB>::apply(const Position& pos) const {
+Value Endgame<Value, KRKB>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == RookValueMidgame);
   assert(pos.piece_count(strongerSide, PAWN) == 0);
@@ -284,7 +330,7 @@ Value EvaluationFunction<KRKB>::apply(const Position& pos) const {
   assert(pos.piece_count(weakerSide, PAWN) == 0);
   assert(pos.piece_count(weakerSide, BISHOP) == 1);
 
-  Value result = mate_table(pos.king_square(weakerSide));
+  Value result = Value(MateTable[pos.king_square(weakerSide)]);
   return strongerSide == pos.side_to_move() ? result : -result;
 }
 
@@ -292,7 +338,7 @@ Value EvaluationFunction<KRKB>::apply(const Position& pos) const {
 /// KR vs KN.  The attacking side has slightly better winning chances than
 /// in KR vs KB, particularly if the king and the knight are far apart.
 template<>
-Value EvaluationFunction<KRKN>::apply(const Position& pos) const {
+Value Endgame<Value, KRKN>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == RookValueMidgame);
   assert(pos.piece_count(strongerSide, PAWN) == 0);
@@ -305,8 +351,8 @@ Value EvaluationFunction<KRKN>::apply(const Position& pos) const {
 
   int d = square_distance(defendingKSq, nSq);
   Value result =   Value(10)
-                 + mate_table(defendingKSq)
-                 + krkn_king_knight_distance_penalty(d);
+                 + MateTable[defendingKSq]
+                 + KRKNKingKnightDistancePenalty[d];
 
   return strongerSide == pos.side_to_move() ? result : -result;
 }
@@ -318,7 +364,7 @@ Value EvaluationFunction<KRKN>::apply(const Position& pos) const {
 /// for the defending side in the search, this is usually sufficient to be
 /// able to win KQ vs KR.
 template<>
-Value EvaluationFunction<KQKR>::apply(const Position& pos) const {
+Value Endgame<Value, KQKR>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == QueenValueMidgame);
   assert(pos.piece_count(strongerSide, PAWN) == 0);
@@ -330,14 +376,14 @@ Value EvaluationFunction<KQKR>::apply(const Position& pos) const {
 
   Value result =  QueenValueEndgame
                 - RookValueEndgame
-                + mate_table(loserKSq)
-                + distance_bonus(square_distance(winnerKSq, loserKSq));
+                + MateTable[loserKSq]
+                + DistanceBonus[square_distance(winnerKSq, loserKSq)];
 
   return strongerSide == pos.side_to_move() ? result : -result;
 }
 
 template<>
-Value EvaluationFunction<KBBKN>::apply(const Position& pos) const {
+Value Endgame<Value, KBBKN>::apply(const Position& pos) const {
 
   assert(pos.piece_count(strongerSide, BISHOP) == 2);
   assert(pos.non_pawn_material(strongerSide) == 2*BishopValueMidgame);
@@ -351,7 +397,7 @@ Value EvaluationFunction<KBBKN>::apply(const Position& pos) const {
   Square nsq = pos.piece_list(weakerSide, KNIGHT, 0);
 
   // Bonus for attacking king close to defending king
-  result += distance_bonus(square_distance(wksq, bksq));
+  result += Value(DistanceBonus[square_distance(wksq, bksq)]);
 
   // Bonus for driving the defending king and knight apart
   result += Value(square_distance(bksq, nsq) * 32);
@@ -366,12 +412,12 @@ Value EvaluationFunction<KBBKN>::apply(const Position& pos) const {
 /// K and two minors vs K and one or two minors or K and two knights against
 /// king alone are always draw.
 template<>
-Value EvaluationFunction<KmmKm>::apply(const Position&) const {
+Value Endgame<Value, KmmKm>::apply(const Position&) const {
   return VALUE_DRAW;
 }
 
 template<>
-Value EvaluationFunction<KNNK>::apply(const Position&) const {
+Value Endgame<Value, KNNK>::apply(const Position&) const {
   return VALUE_DRAW;
 }
 
@@ -381,7 +427,7 @@ Value EvaluationFunction<KNNK>::apply(const Position&) const {
 /// returned. If not, the return value is SCALE_FACTOR_NONE, i.e. no scaling
 /// will be used.
 template<>
-ScaleFactor ScalingFunction<KBPsK>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KBPsK>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == BishopValueMidgame);
   assert(pos.piece_count(strongerSide, BISHOP) == 1);
@@ -401,8 +447,8 @@ ScaleFactor ScalingFunction<KBPsK>::apply(const Position& pos) const {
       Square queeningSq = relative_square(strongerSide, make_square(pawnFile, RANK_8));
       Square kingSq = pos.king_square(weakerSide);
 
-      if (  !same_color_squares(queeningSq, bishopSq)
-          && file_distance(square_file(kingSq), pawnFile) <= 1)
+      if (   opposite_color_squares(queeningSq, bishopSq)
+          && abs(square_file(kingSq) - pawnFile) <= 1)
       {
           // The bishop has the wrong color, and the defending king is on the
           // file of the pawn(s) or the neighboring file. Find the rank of the
@@ -435,7 +481,7 @@ ScaleFactor ScalingFunction<KBPsK>::apply(const Position& pos) const {
 /// It tests for fortress draws with a rook on the third rank defended by
 /// a pawn.
 template<>
-ScaleFactor ScalingFunction<KQKRPs>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KQKRPs>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == QueenValueMidgame);
   assert(pos.piece_count(strongerSide, QUEEN) == 1);
@@ -446,8 +492,8 @@ ScaleFactor ScalingFunction<KQKRPs>::apply(const Position& pos) const {
   Square kingSq = pos.king_square(weakerSide);
   if (   relative_rank(weakerSide, kingSq) <= RANK_2
       && relative_rank(weakerSide, pos.king_square(strongerSide)) >= RANK_4
-      && (pos.pieces(ROOK, weakerSide) & relative_rank_bb(weakerSide, RANK_3))
-      && (pos.pieces(PAWN, weakerSide) & relative_rank_bb(weakerSide, RANK_2))
+      && (pos.pieces(ROOK, weakerSide) & rank_bb(relative_rank(weakerSide, RANK_3)))
+      && (pos.pieces(PAWN, weakerSide) & rank_bb(relative_rank(weakerSide, RANK_2)))
       && (pos.attacks_from<KING>(kingSq) & pos.pieces(PAWN, weakerSide)))
   {
       Square rsq = pos.piece_list(weakerSide, ROOK, 0);
@@ -466,7 +512,7 @@ ScaleFactor ScalingFunction<KQKRPs>::apply(const Position& pos) const {
 /// It would also be nice to rewrite the actual code for this function,
 /// which is mostly copied from Glaurung 1.x, and not very pretty.
 template<>
-ScaleFactor ScalingFunction<KRPKR>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KRPKR>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == RookValueMidgame);
   assert(pos.piece_count(strongerSide, PAWN) == 1);
@@ -584,7 +630,7 @@ ScaleFactor ScalingFunction<KRPKR>::apply(const Position& pos) const {
 /// single pattern: If the stronger side has no pawns and the defending king
 /// is actively placed, the position is drawish.
 template<>
-ScaleFactor ScalingFunction<KRPPKRP>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KRPPKRP>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == RookValueMidgame);
   assert(pos.piece_count(strongerSide, PAWN) == 2);
@@ -623,7 +669,7 @@ ScaleFactor ScalingFunction<KRPPKRP>::apply(const Position& pos) const {
 /// against king. There is just a single rule here: If all pawns are on
 /// the same rook file and are blocked by the defending king, it's a draw.
 template<>
-ScaleFactor ScalingFunction<KPsK>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KPsK>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == VALUE_ZERO);
   assert(pos.piece_count(strongerSide, PAWN) >= 2);
@@ -661,7 +707,7 @@ ScaleFactor ScalingFunction<KPsK>::apply(const Position& pos) const {
 /// it's a draw. If the two bishops have opposite color, it's almost always
 /// a draw.
 template<>
-ScaleFactor ScalingFunction<KBPKB>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KBPKB>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == BishopValueMidgame);
   assert(pos.piece_count(strongerSide, BISHOP) == 1);
@@ -678,12 +724,12 @@ ScaleFactor ScalingFunction<KBPKB>::apply(const Position& pos) const {
   // Case 1: Defending king blocks the pawn, and cannot be driven away
   if (   square_file(weakerKingSq) == square_file(pawnSq)
       && relative_rank(strongerSide, pawnSq) < relative_rank(strongerSide, weakerKingSq)
-      && (  !same_color_squares(weakerKingSq, strongerBishopSq)
+      && (   opposite_color_squares(weakerKingSq, strongerBishopSq)
           || relative_rank(strongerSide, weakerKingSq) <= RANK_6))
       return SCALE_FACTOR_ZERO;
 
   // Case 2: Opposite colored bishops
-  if (!same_color_squares(strongerBishopSq, weakerBishopSq))
+  if (opposite_color_squares(strongerBishopSq, weakerBishopSq))
   {
       // We assume that the position is drawn in the following three situations:
       //
@@ -716,7 +762,7 @@ ScaleFactor ScalingFunction<KBPKB>::apply(const Position& pos) const {
 /// KBPPKBScalingFunction scales KBPP vs KB endgames. It detects a few basic
 /// draws with opposite-colored bishops.
 template<>
-ScaleFactor ScalingFunction<KBPPKB>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KBPPKB>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == BishopValueMidgame);
   assert(pos.piece_count(strongerSide, BISHOP) == 1);
@@ -728,8 +774,7 @@ ScaleFactor ScalingFunction<KBPPKB>::apply(const Position& pos) const {
   Square wbsq = pos.piece_list(strongerSide, BISHOP, 0);
   Square bbsq = pos.piece_list(weakerSide, BISHOP, 0);
 
-  if (same_color_squares(wbsq, bbsq))
-      // Not opposite-colored bishops, no scaling
+  if (!opposite_color_squares(wbsq, bbsq))
       return SCALE_FACTOR_NONE;
 
   Square ksq = pos.king_square(weakerSide);
@@ -757,7 +802,7 @@ ScaleFactor ScalingFunction<KBPPKB>::apply(const Position& pos) const {
     // some square in the frontmost pawn's path.
     if (   square_file(ksq) == square_file(blockSq1)
         && relative_rank(strongerSide, ksq) >= relative_rank(strongerSide, blockSq1)
-        && !same_color_squares(ksq, wbsq))
+        && opposite_color_squares(ksq, wbsq))
         return SCALE_FACTOR_ZERO;
     else
         return SCALE_FACTOR_NONE;
@@ -767,14 +812,14 @@ ScaleFactor ScalingFunction<KBPPKB>::apply(const Position& pos) const {
     // in front of the frontmost pawn's path, and the square diagonally behind
     // this square on the file of the other pawn.
     if (   ksq == blockSq1
-        && !same_color_squares(ksq, wbsq)
+        && opposite_color_squares(ksq, wbsq)
         && (   bbsq == blockSq2
             || (pos.attacks_from<BISHOP>(blockSq2) & pos.pieces(BISHOP, weakerSide))
-            || rank_distance(r1, r2) >= 2))
+            || abs(r1 - r2) >= 2))
         return SCALE_FACTOR_ZERO;
 
     else if (   ksq == blockSq2
-             && !same_color_squares(ksq, wbsq)
+             && opposite_color_squares(ksq, wbsq)
              && (   bbsq == blockSq1
                  || (pos.attacks_from<BISHOP>(blockSq1) & pos.pieces(BISHOP, weakerSide))))
         return SCALE_FACTOR_ZERO;
@@ -793,7 +838,7 @@ ScaleFactor ScalingFunction<KBPPKB>::apply(const Position& pos) const {
 /// square of the king is not of the same color as the stronger side's bishop,
 /// it's a draw.
 template<>
-ScaleFactor ScalingFunction<KBPKN>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KBPKN>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == BishopValueMidgame);
   assert(pos.piece_count(strongerSide, BISHOP) == 1);
@@ -808,7 +853,7 @@ ScaleFactor ScalingFunction<KBPKN>::apply(const Position& pos) const {
 
   if (   square_file(weakerKingSq) == square_file(pawnSq)
       && relative_rank(strongerSide, pawnSq) < relative_rank(strongerSide, weakerKingSq)
-      && (  !same_color_squares(weakerKingSq, strongerBishopSq)
+      && (   opposite_color_squares(weakerKingSq, strongerBishopSq)
           || relative_rank(strongerSide, weakerKingSq) <= RANK_6))
       return SCALE_FACTOR_ZERO;
 
@@ -820,7 +865,7 @@ ScaleFactor ScalingFunction<KBPKN>::apply(const Position& pos) const {
 /// If the pawn is a rook pawn on the 7th rank and the defending king prevents
 /// the pawn from advancing, the position is drawn.
 template<>
-ScaleFactor ScalingFunction<KNPK>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KNPK>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == KnightValueMidgame);
   assert(pos.piece_count(strongerSide, KNIGHT) == 1);
@@ -850,7 +895,7 @@ ScaleFactor ScalingFunction<KNPK>::apply(const Position& pos) const {
 /// advanced and not on a rook file; in this case it is often possible to win
 /// (e.g. 8/4k3/3p4/3P4/6K1/8/8/8 w - - 0 1).
 template<>
-ScaleFactor ScalingFunction<KPKP>::apply(const Position& pos) const {
+ScaleFactor Endgame<ScaleFactor, KPKP>::apply(const Position& pos) const {
 
   assert(pos.non_pawn_material(strongerSide) == VALUE_ZERO);
   assert(pos.non_pawn_material(weakerSide) == VALUE_ZERO);
@@ -890,21 +935,5 @@ ScaleFactor ScalingFunction<KPKP>::apply(const Position& pos) const {
 
   // Probe the KPK bitbase with the weakest side's pawn removed. If it's a
   // draw, it's probably at least a draw even with the pawn.
-  return probe_kpk(wksq, wpsq, bksq, stm) ? SCALE_FACTOR_NONE : SCALE_FACTOR_ZERO;
-}
-
-
-namespace {
-
-  // Probe the KP vs K bitbase
-
-  int probe_kpk(Square wksq, Square wpsq, Square bksq, Color stm) {
-
-    int wp = square_file(wpsq) + 4 * (square_rank(wpsq) - 1);
-    int index = int(stm) + 2 * bksq + 128 * wksq + 8192 * wp;
-
-    assert(index >= 0 && index < 24576 * 8);
-
-    return KPKBitbase[index / 8] & (1 << (index & 7));
-  }
+  return probe_kpk_bitbase(wksq, wpsq, bksq, stm) ? SCALE_FACTOR_NONE : SCALE_FACTOR_ZERO;
 }

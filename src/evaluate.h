@@ -17,18 +17,18 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if !defined(EVALUATE_H_INCLUDED)
 #define EVALUATE_H_INCLUDED
 
-#include "color.h"
-#include "value.h"
+#include "types.h"
 
 class Position;
 
 extern Value evaluate(const Position& pos, Value& margin);
-extern void init_eval(int threads);
-extern void quit_eval();
+extern std::string trace_evaluate(const Position& pos);
 extern void read_evaluation_uci_options(Color sideToMove);
+
+// Evaluation grain size, must be a power of 2
+const int GrainSize = 2;
 
 #endif // !defined(EVALUATE_H_INCLUDED)

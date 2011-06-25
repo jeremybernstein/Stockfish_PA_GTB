@@ -17,46 +17,18 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if !defined(MISC_H_INCLUDED)
 #define MISC_H_INCLUDED
 
-
-////
-//// Includes
-////
-
-#include <fstream>
 #include <string>
-
 #include "types.h"
 
-////
-//// Macros
-////
-
-#define Min(x, y) (((x) < (y))? (x) : (y))
-#define Max(x, y) (((x) < (y))? (y) : (x))
-
-
-////
-//// Prototypes
-////
-
 extern const std::string engine_name();
+extern const std::string engine_authors();
 extern int get_system_time();
 extern int cpu_count();
-extern int data_available();
+extern int input_available();
 extern void prefetch(char* addr);
-extern void prefetchPawn(Key, int);
-
-
-////
-//// Debug
-////
-
-extern bool dbg_show_mean;
-extern bool dbg_show_hit_rate;
 
 extern void dbg_hit_on(bool b);
 extern void dbg_hit_on_c(bool c, bool b);

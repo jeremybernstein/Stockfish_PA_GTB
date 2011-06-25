@@ -28,58 +28,63 @@
 
 typedef std::vector<std::string> StrVector;
 
-class Option {
+class UCIOption {
 public:
-  Option() {} // To allow insertion in a std::map
-  Option(const char* defaultValue);
-  Option(bool defaultValue, std::string type = "check");
-  Option(int defaultValue, int minValue, int maxValue);
-  Option(std::string defaultValue, StrVector comboValues);
+  UCIOption() {} // To be used in a std::map
+  UCIOption(const char* defaultValue);
+  UCIOption(bool defaultValue, std::string type = "check");
+  UCIOption(int defaultValue, int minValue, int maxValue);
+  UCIOption(std::string defaultValue, StrVector comboValues);
 
-  void set_value(const std::string& value);
+  void set_value(const std::string& v);
   template<typename T> T value() const;
 
 private:
-  friend void init_uci_options();
-  friend void print_uci_options();
+  friend class OptionsMap;
 
   std::string defaultValue, currentValue, type;
-  size_t idx;
   int minValue, maxValue;
   StrVector comboValues;
+  size_t idx;
 };
 
+
+/// Custom comparator because UCI options should not be case sensitive
+struct CaseInsensitiveLess {
+  bool operator() (const std::string&, const std::string&) const;
+};
+
+
+/// Our options container is actually a map with a customized c'tor
+class OptionsMap : public std::map<std::string, UCIOption, CaseInsensitiveLess> {
+public:
+  OptionsMap();
+  std::string print_all() const;
+};
+
+extern OptionsMap Options;
+
+
+/// Option::value() definition and specializations
 template<typename T>
-inline T Option::value() const {
+T UCIOption::value() const {
 
   assert(type == "spin" || type == "combo");
   return T(atoi(currentValue.c_str()));
 }
 
 template<>
-inline std::string Option::value<std::string>() const {
+inline std::string UCIOption::value<std::string>() const {
 
   assert(type == "string" || type == "combo");
   return currentValue;
 }
 
 template<>
-inline bool Option::value<bool>() const {
+inline bool UCIOption::value<bool>() const {
 
   assert(type == "check" || type == "button");
   return currentValue == "true";
 }
-
-
-// Custom comparator because UCI options should not be case sensitive
-struct CaseInsensitiveLess {
-  bool operator() (const std::string&, const std::string&) const;
-};
-
-typedef std::map<std::string, Option, CaseInsensitiveLess> OptionsMap;
-
-extern OptionsMap Options;
-extern void init_uci_options();
-extern void print_uci_options();
 
 #endif // !defined(UCIOPTION_H_INCLUDED)

@@ -17,34 +17,19 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if !defined(THREAD_H_INCLUDED)
 #define THREAD_H_INCLUDED
-
-
-////
-//// Includes
-////
 
 #include <cstring>
 
 #include "lock.h"
+#include "material.h"
 #include "movepick.h"
+#include "pawns.h"
 #include "position.h"
-#include "search.h"
 
-
-////
-//// Constants and variables
-////
-
-const int MAX_THREADS = 16;
+const int MAX_THREADS = 32;
 const int MAX_ACTIVE_SPLIT_POINTS = 8;
-
-
-////
-//// Types
-////
 
 struct SplitPoint {
 
@@ -52,16 +37,15 @@ struct SplitPoint {
   SplitPoint* parent;
   const Position* pos;
   Depth depth;
-  bool pvNode, mateThreat;
+  bool pvNode;
   Value beta;
   int ply;
   int master;
   Move threatMove;
-  SearchStack sstack[MAX_THREADS][PLY_MAX_PLUS_2];
 
   // Const pointers to shared data
   MovePicker* mp;
-  SearchStack* parentSstack;
+  SearchStack* ss;
 
   // Shared data
   Lock lock;
@@ -70,28 +54,80 @@ struct SplitPoint {
   volatile Value alpha;
   volatile Value bestValue;
   volatile int moveCount;
-  volatile bool betaCutoff;
-  volatile int slaves[MAX_THREADS];
+  volatile bool is_betaCutoff;
+  volatile bool is_slave[MAX_THREADS];
 };
 
-// ThreadState type is used to represent thread's current state
 
-enum ThreadState
-{
-  THREAD_INITIALIZING,  // thread is initializing itself
-  THREAD_SEARCHING,     // thread is performing work
-  THREAD_AVAILABLE,     // thread is waiting for work
-  THREAD_BOOKED,        // other thread (master) has booked us as a slave
-  THREAD_WORKISWAITING, // master has ordered us to start
-  THREAD_TERMINATED     // we are quitting and thread is terminated
-};
+/// Thread struct is used to keep together all the thread related stuff like locks,
+/// state and especially split points. We also use per-thread pawn and material hash
+/// tables so that once we get a pointer to an entry its life time is unlimited and
+/// we don't have to care about someone changing the entry under our feet.
 
 struct Thread {
+
+  enum ThreadState
+  {
+    INITIALIZING,  // Thread is initializing itself
+    SEARCHING,     // Thread is performing work
+    AVAILABLE,     // Thread is waiting for work
+    BOOKED,        // Other thread (master) has booked us as a slave
+    WORKISWAITING, // Master has ordered us to start
+    TERMINATED     // We are quitting and thread is terminated
+  };
+
+  void wake_up();
+  bool cutoff_occurred() const;
+  bool is_available_to(int master) const;
+
+  MaterialInfoTable materialTable;
+  PawnInfoTable pawnTable;
+  int maxPly;
+  Lock sleepLock;
+  WaitCondition sleepCond;
   volatile ThreadState state;
   SplitPoint* volatile splitPoint;
   volatile int activeSplitPoints;
   SplitPoint splitPoints[MAX_ACTIVE_SPLIT_POINTS];
 };
 
+
+/// ThreadsManager class is used to handle all the threads related stuff like init,
+/// starting, parking and, the most important, launching a slave thread at a split
+/// point. All the access to shared thread data is done through this class.
+
+class ThreadsManager {
+  /* As long as the single ThreadsManager object is defined as a global we don't
+     need to explicitly initialize to zero its data members because variables with
+     static storage duration are automatically set to zero before enter main()
+  */
+public:
+  Thread& operator[](int threadID) { return threads[threadID]; }
+  void init();
+  void exit();
+  void init_hash_tables();
+
+  int min_split_depth() const { return minimumSplitDepth; }
+  int size() const { return activeThreads; }
+  void set_size(int cnt) { activeThreads = cnt; }
+
+  void read_uci_options();
+  bool available_slave_exists(int master) const;
+  void idle_loop(int threadID, SplitPoint* sp);
+
+  template <bool Fake>
+  void split(Position& pos, SearchStack* ss, Value* alpha, const Value beta, Value* bestValue,
+             Depth depth, Move threatMove, int moveCount, MovePicker* mp, bool pvNode);
+private:
+  Lock mpLock;
+  Depth minimumSplitDepth;
+  int maxThreadsPerSplitPoint;
+  bool useSleepingThreads;
+  int activeThreads;
+  volatile bool allThreadsShouldExit;
+  Thread threads[MAX_THREADS];
+};
+
+extern ThreadsManager Threads;
 
 #endif // !defined(THREAD_H_INCLUDED)

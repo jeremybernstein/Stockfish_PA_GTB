@@ -20,26 +20,19 @@
 // To profile with callgrind uncomment following line
 //#define USE_CALLGRIND
 
-
-////
-//// Includes
-////
-
+#include <cstdio>
 #include <iostream>
 #include <string>
 
 #include "bitboard.h"
-#include "bitcount.h"
 #ifdef USE_EGTB
 #include "egtb.h"
 #endif
 #include "endgame.h"
 #include "evaluate.h"
-#include "material.h"
-#include "misc.h"
 #include "position.h"
-#include "search.h"
 #include "thread.h"
+#include "search.h"
 #include "ucioption.h"
 
 #ifdef USE_CALLGRIND
@@ -50,27 +43,23 @@ using namespace std;
 
 extern bool execute_uci_command(const string& cmd);
 extern void benchmark(int argc, char* argv[]);
-
-////
-//// Functions
-////
+extern void init_kpk_bitbase();
 
 int main(int argc, char* argv[]) {
 
-  // Disable IO buffering
-  //cout.rdbuf()->pubsetbuf(NULL, 0);
-  //cin.rdbuf()->pubsetbuf(NULL, 0);
-  setvbuf(stdin,NULL,_IONBF,0); // BB+ fix
-  setvbuf(stdout,NULL,_IONBF,0);
+  // Disable IO buffering for C and C++ standard libraries
+  setvbuf(stdin, NULL, _IONBF, 0);
+  setvbuf(stdout, NULL, _IONBF, 0);
+  cout.rdbuf()->pubsetbuf(NULL, 0);
+  cin.rdbuf()->pubsetbuf(NULL, 0);
+
   // Startup initializations
   init_bitboards();
-  init_uci_options();
   Position::init_zobrist();
   Position::init_piece_square_tables();
-  init_eval(1);
-  init_bitbases();
+  init_kpk_bitbase();
   init_search();
-  init_threads();
+  Threads.init();
 #ifdef USE_EGTB
   init_egtb(); // Init here, not at the top of each move. Setting uci options will check this and update if necessary.
 #endif
@@ -79,41 +68,27 @@ int main(int argc, char* argv[]) {
   CALLGRIND_START_INSTRUMENTATION;
 #endif
 
-  if (argc <= 1)
+  if (argc < 2)
   {
       // Print copyright notice
-      cout << engine_name()
-           << " by Tord Romstad, Marco Costalba, Joona Kiiski" << endl;
+      cout << engine_name() << " by " << engine_authors() << endl;
 
       if (CpuHasPOPCNT)
           cout << "Good! CPU has hardware POPCNT." << endl;
 
       // Wait for a command from the user, and passes this command to
-      // execute_uci_command() and also intercepts EOF from stdin, by
-      // translating EOF to the "quit" command. This ensures that we
-      // exit gracefully if the GUI dies unexpectedly.
+      // execute_uci_command() and also intercepts EOF from stdin to
+      // ensure that we exit gracefully if the GUI dies unexpectedly.
       string cmd;
-
-      do {
-          // Wait for a command from stdin
-          if (!getline(cin, cmd))
-              cmd = "quit";
-
-      } while (execute_uci_command(cmd));
+      while (getline(cin, cmd) && execute_uci_command(cmd)) {}
   }
-  else // Process command line arguments
-  {
-      if (string(argv[1]) != "bench" || argc > 8)
-          cout << "Usage: stockfish bench [hash size = 128] [threads = 1] "
-               << "[limit = 12] [fen positions file = default] "
-               << "[depth, time, perft or node limited = depth] " 
-			   << "[MultiPV = 1]"
-			   << endl;
-      else
-          benchmark(argc, argv);
-  }
+  else if (string(argv[1]) == "bench" && argc < 8)
+      benchmark(argc, argv);
+  else
+      cout << "Usage: stockfish bench [hash size = 128] [threads = 1] "
+           << "[limit = 12] [fen positions file = default] "
+           << "[limited by depth, time, nodes or perft = depth]" << endl;
 
-  exit_threads();
-  quit_eval();
+  Threads.exit();
   return 0;
 }

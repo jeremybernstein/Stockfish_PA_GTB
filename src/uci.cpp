@@ -17,11 +17,6 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-////
-//// Includes
-////
-
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -33,14 +28,11 @@
 #include "evaluate.h"
 #include "misc.h"
 #include "move.h"
-#include "movegen.h"
 #include "position.h"
-#include "san.h"
 #include "search.h"
 #include "ucioption.h"
 
 using namespace std;
-
 
 namespace {
 
@@ -51,11 +43,10 @@ namespace {
   // is actually a string stream built on a given input string.
   typedef istringstream UCIParser;
 
-  // Local functions
-  void set_option(UCIParser& uip);
-  void set_position(Position& pos, UCIParser& uip);
-  bool go(Position& pos, UCIParser& uip);
-  void perft(Position& pos, UCIParser& uip);
+  void set_option(UCIParser& up);
+  void set_position(Position& pos, UCIParser& up);
+  bool go(Position& pos, UCIParser& up);
+  void perft(Position& pos, UCIParser& up);
 }
 
 
@@ -67,11 +58,11 @@ namespace {
 bool execute_uci_command(const string& cmd) {
 
   static Position pos(StartPositionFEN, false, 0); // The root position
+
   UCIParser up(cmd);
   string token;
 
-  if (!(up >> token)) // operator>>() skips any whitespace
-      return true;
+  up >> token; // operator>>() skips any whitespace
 
   if (token == "quit")
       return false;
@@ -79,14 +70,7 @@ bool execute_uci_command(const string& cmd) {
   if (token == "go")
       return go(pos, up);
 
-  if (token == "uci")
-  {
-      cout << "id name " << engine_name()
-           << "\nid author Tord Romstad, Marco Costalba, Joona Kiiski\n";
-      print_uci_options();
-      cout << "uciok" << endl;
-  }
-  else if (token == "ucinewgame")
+  if (token == "ucinewgame")
       pos.from_fen(StartPositionFEN, false);
 
   else if (token == "isready")
@@ -98,33 +82,31 @@ bool execute_uci_command(const string& cmd) {
   else if (token == "setoption")
       set_option(up);
 
-  // The remaining commands are for debugging purposes only
+  else if (token == "perft")
+      perft(pos, up);
+
   else if (token == "d")
       pos.print();
 
   else if (token == "flip")
-  {
-      Position p(pos, pos.thread());
-      pos.flipped_copy(p);
-  }
+      pos.flip();
+
   else if (token == "eval")
   {
-      Value evalMargin;
-      cout << "Incremental mg: "   << mg_value(pos.value())
-           << "\nIncremental eg: " << eg_value(pos.value())
-           << "\nFull eval: "      << evaluate(pos, evalMargin) << endl;
+      read_evaluation_uci_options(pos.side_to_move());
+      cout << trace_evaluate(pos) << endl;
   }
+
   else if (token == "key")
-      cout << "key: " << hex << pos.get_key()
+      cout << "key: " << hex     << pos.get_key()
            << "\nmaterial key: " << pos.get_material_key()
-           << "\npawn key: " << pos.get_pawn_key() << endl;
+           << "\npawn key: "     << pos.get_pawn_key() << endl;
 
-  else if (token == "perft")
-      perft(pos, up);
-
-  else if (token == "stop")
-      ; // ignore 'stop'
-
+  else if (token == "uci")
+      cout << "id name "     << engine_name()
+           << "\nid author " << engine_authors()
+           << "\n"           << Options.print_all()
+           << "\nuciok"      << endl;
   else
       cout << "Unknown command: " << cmd << endl;
 
@@ -132,104 +114,65 @@ bool execute_uci_command(const string& cmd) {
 }
 
 
-////
-//// Local functions
-////
-
 namespace {
 
-  // set_position() is called when Stockfish receives the "position" UCI
-  // command. The input parameter is a UCIParser. It is assumed
-  // that this parser has consumed the first token of the UCI command
-  // ("position"), and is ready to read the second token ("startpos"
-  // or "fen", if the input is well-formed).
+  // set_position() is called when engine receives the "position" UCI
+  // command. The function sets up the position described in the given
+  // fen string ("fen") or the starting position ("startpos") and then
+  // makes the moves given in the following move list ("moves").
 
   void set_position(Position& pos, UCIParser& up) {
 
-    string token;
+    string token, fen;
 
-    if (!(up >> token) || (token != "startpos" && token != "fen"))
-        return;
+    up >> token; // operator>>() skips any whitespace
 
     if (token == "startpos")
     {
         pos.from_fen(StartPositionFEN, false);
-        if (!(up >> token))
-            return;
+        up >> token; // Consume "moves" token if any
     }
-    else // fen
+    else if (token == "fen")
     {
-        string fen;
         while (up >> token && token != "moves")
-        {
-            fen += token;
-            fen += ' ';
-        }
+            fen += token + " ";
+
         pos.from_fen(fen, Options["UCI_Chess960"].value<bool>());
     }
+    else return;
 
-    if (token != "moves")
-        return;
-
-    // Parse optional move list
-    Move move;
-    StateInfo st;
+    // Parse move list (if any)
     while (up >> token)
-    {
-        move = move_from_uci(pos, token);
-        pos.do_move(move, st);
-        if (pos.rule_50_counter() == 0)
-            pos.reset_game_ply();
-
-        pos.inc_startpos_ply_counter(); //FIXME: make from_fen to support this and rule50
-    }
-    // Our StateInfo st is about going out of scope so copy
-    // its content inside pos before it disappears.
-    pos.detach();
+        pos.do_setup_move(move_from_uci(pos, token));
   }
 
 
-  // set_option() is called when Stockfish receives the "setoption" UCI
-  // command. The input parameter is a UCIParser. It is assumed
-  // that this parser has consumed the first token of the UCI command
-  // ("setoption"), and is ready to read the second token ("name", if
-  // the input is well-formed).
+  // set_option() is called when engine receives the "setoption" UCI
+  // command. The function updates the corresponding UCI option ("name")
+  // to the given value ("value").
 
   void set_option(UCIParser& up) {
 
-    string token, name, value;
+    string token, name;
+    string value = "true"; // UCI buttons don't have a "value" field
 
-    if (!(up >> token) || token != "name") // operator>>() skips any whitespace
-        return;
-
-    if (!(up >> name))
-        return;
+    up >> token; // Consume "name" token
+    up >> name;  // Read option name
 
     // Handle names with included spaces
     while (up >> token && token != "value")
-        name += (" " + token);
+        name += " " + token;
 
-    if (Options.find(name) == Options.end())
-    {
-        cout << "No such option: " << name << endl;
-        return;
-    }
-
-    // Is a button ?
-    if (token != "value")
-    {
-        Options[name].set_value("true");
-        return;
-    }
-
-    if (!(up >> value))
-        return;
+    up >> value; // Read option value
 
     // Handle values with included spaces
     while (up >> token)
-        value += (" " + token);
+        value += " " + token;
 
-    Options[name].set_value(value);
+    if (Options.find(name) != Options.end())
+        Options[name].set_value(value);
+    else
+        cout << "No such option: " << name << endl;
 
 #ifdef USE_EGTB
     init_egtb();
@@ -237,78 +180,75 @@ namespace {
   }
 
 
-  // go() is called when Stockfish receives the "go" UCI command. The
-  // input parameter is a UCIParser. It is assumed that this
-  // parser has consumed the first token of the UCI command ("go"),
-  // and is ready to read the second token. The function sets the
-  // thinking time and other parameters from the input string, and
-  // calls think() (defined in search.cpp) with the appropriate
-  // parameters. Returns false if a quit command is received while
-  // thinking, returns true otherwise.
+  // go() is called when engine receives the "go" UCI command. The
+  // function sets the thinking time and other parameters from the input
+  // string, and then calls think(). Returns false if a quit command
+  // is received while thinking, true otherwise.
 
   bool go(Position& pos, UCIParser& up) {
 
     string token;
-
-    int time[2] = {0, 0}, inc[2] = {0, 0};
-    int movesToGo = 0, depth = 0, nodes = 0, moveTime = 0;
-    bool infinite = false, ponder = false;
-    Move searchMoves[MOVES_MAX];
-
-    searchMoves[0] = MOVE_NONE;
+    SearchLimits limits;
+    Move searchMoves[MAX_MOVES], *cur = searchMoves;
+    int time[] = { 0, 0 }, inc[] = { 0, 0 };
 
     while (up >> token)
     {
         if (token == "infinite")
-            infinite = true;
+            limits.infinite = true;
         else if (token == "ponder")
-            ponder = true;
+            limits.ponder = true;
         else if (token == "wtime")
-            up >> time[0];
+            up >> time[WHITE];
         else if (token == "btime")
-            up >> time[1];
+            up >> time[BLACK];
         else if (token == "winc")
-            up >> inc[0];
+            up >> inc[WHITE];
         else if (token == "binc")
-            up >> inc[1];
+            up >> inc[BLACK];
         else if (token == "movestogo")
-            up >> movesToGo;
+            up >> limits.movesToGo;
         else if (token == "depth")
-            up >> depth;
+            up >> limits.maxDepth;
         else if (token == "nodes")
-            up >> nodes;
+            up >> limits.maxNodes;
         else if (token == "movetime")
-            up >> moveTime;
+            up >> limits.maxTime;
         else if (token == "searchmoves")
-        {
-            int numOfMoves = 0;
             while (up >> token)
-                searchMoves[numOfMoves++] = move_from_uci(pos, token);
-
-            searchMoves[numOfMoves] = MOVE_NONE;
-        }
+                *cur++ = move_from_uci(pos, token);
     }
+
+    *cur = MOVE_NONE;
+    limits.time = time[pos.side_to_move()];
+    limits.increment = inc[pos.side_to_move()];
 
     assert(pos.is_ok());
 
-    return think(pos, infinite, ponder, time, inc, movesToGo,
-                 depth, nodes, moveTime, searchMoves);
+    return think(pos, limits, searchMoves);
   }
+
+
+  // perft() is called when engine receives the "perft" command.
+  // The function calls perft() passing the required search depth
+  // then prints counted leaf nodes and elapsed time.
 
   void perft(Position& pos, UCIParser& up) {
 
-    int depth, tm, n;
+    int depth, time;
+    int64_t n;
 
     if (!(up >> depth))
         return;
 
-    tm = get_system_time();
+    time = get_system_time();
 
     n = perft(pos, depth * ONE_PLY);
 
-    tm = get_system_time() - tm;
+    time = get_system_time() - time;
+
     std::cout << "\nNodes " << n
-              << "\nTime (ms) " << tm
-              << "\nNodes/second " << int(n / (tm / 1000.0)) << std::endl;
+              << "\nTime (ms) " << time
+              << "\nNodes/second " << int(n / (time / 1000.0)) << std::endl;
   }
 }
