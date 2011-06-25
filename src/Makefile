@@ -1,4 +1,4 @@
-# Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+﻿# Stockfish, a UCI chess playing engine derived from Glaurung 2.1
 # Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
 # Copyright (C) 2008-2010 Marco Costalba, Joona Kiiski, Tord Romstad
 #
@@ -34,8 +34,8 @@ PGOBENCH = ./$(EXE) bench 32 1 10 default depth
 
 ### Object files
 OBJS = bitboard.o pawns.o material.o endgame.o egtb.o evaluate.o main.o \
-	misc.o move.o movegen.o history.o movepick.o search.o position.o \
-	tt.o uci.o ucioption.o book.o bitbase.o san.o benchmark.o timeman.o
+	misc.o move.o movegen.o movepick.o search.o position.o tt.o uci.o \
+	ucioption.o book.o bitbase.o thread.o benchmark.o timeman.o
 
 
 ### ==========================================================================
