@@ -127,9 +127,9 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|x64'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Stockfish_211_PA_GTB_$(PlatformName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_PGO|Win32'">Stockfish_201_PA_GTB_$(PlatformName)</TargetName>
@@ -283,23 +283,19 @@
     <ClInclude Include="src\bitcount.h" />
     <ClInclude Include="src\book.h" />
     <ClInclude Include="src\egtb\compression\lzma\Bra.h" />
-    <ClInclude Include="src\color.h" />
     <ClInclude Include="src\egtb\compression\zlib\crc32.h" />
     <ClInclude Include="src\egtb\compression\zlib\deflate.h" />
-    <ClInclude Include="src\depth.h" />
     <ClInclude Include="src\egtb.h" />
     <ClInclude Include="src\endgame.h" />
     <ClInclude Include="src\evaluate.h" />
     <ClInclude Include="src\egtb\gtb-att.h" />
     <ClInclude Include="src\egtb\gtb-dec.h" />
     <ClInclude Include="src\egtb\gtb-probe.h" />
-    <ClInclude Include="src\history.h" />
     <ClInclude Include="src\egtb\compression\huffman\hzip.h" />
     <ClInclude Include="src\egtb\compression\zlib\inffast.h" />
     <ClInclude Include="src\egtb\compression\zlib\inffixed.h" />
     <ClInclude Include="src\egtb\compression\zlib\inflate.h" />
     <ClInclude Include="src\egtb\compression\zlib\inftrees.h" />
-    <ClInclude Include="src\lock.h" />
     <ClInclude Include="src\egtb\compression\liblzf\lzf.h" />
     <ClInclude Include="src\egtb\compression\lzma\LzFind.h" />
     <ClInclude Include="src\egtb\compression\lzma\LzFindMt.h" />
@@ -315,14 +311,11 @@
     <ClInclude Include="src\movegen.h" />
     <ClInclude Include="src\movepick.h" />
     <ClInclude Include="src\pawns.h" />
-    <ClInclude Include="src\piece.h" />
     <ClInclude Include="src\position.h" />
     <ClInclude Include="src\egtb\progname.h" />
     <ClInclude Include="src\psqtab.h" />
     <ClInclude Include="src\rkiss.h" />
-    <ClInclude Include="src\san.h" />
     <ClInclude Include="src\search.h" />
-    <ClInclude Include="src\square.h" />
     <ClInclude Include="src\egtb\sysport\sysport.h" />
     <ClInclude Include="src\thread.h" />
     <ClInclude Include="src\timeman.h" />
@@ -331,7 +324,6 @@
     <ClInclude Include="src\types.h" />
     <ClInclude Include="src\egtb\compression\lzma\Types.h" />
     <ClInclude Include="src\ucioption.h" />
-    <ClInclude Include="src\value.h" />
     <ClInclude Include="src\egtb\version.h" />
     <ClInclude Include="src\egtb\compression\wrap.h" />
     <ClInclude Include="src\egtb\compression\zlib\zconf.h" />
@@ -355,7 +347,6 @@
     <ClCompile Include="src\egtb\gtb-att.c" />
     <ClCompile Include="src\egtb\gtb-dec.c" />
     <ClCompile Include="src\egtb\gtb-probe.c" />
-    <ClCompile Include="src\history.cpp" />
     <ClCompile Include="src\egtb\compression\huffman\hzip.c" />
     <ClCompile Include="src\egtb\compression\zlib\infback.c" />
     <ClCompile Include="src\egtb\compression\zlib\inffast.c" />
@@ -376,9 +367,9 @@
     <ClCompile Include="src\movepick.cpp" />
     <ClCompile Include="src\pawns.cpp" />
     <ClCompile Include="src\position.cpp" />
-    <ClCompile Include="src\san.cpp" />
     <ClCompile Include="src\search.cpp" />
     <ClCompile Include="src\egtb\sysport\sysport.c" />
+    <ClCompile Include="src\thread.cpp" />
     <ClCompile Include="src\timeman.cpp" />
     <ClCompile Include="src\egtb\compression\zlib\trees.c" />
     <ClCompile Include="src\tt.cpp" />
