@@ -263,7 +263,27 @@ namespace {
   bool connected_moves(const Position& pos, Move m1, Move m2);
   Value value_to_tt(Value v, int ply);
   Value value_from_tt(Value v, int ply);
+#if 1
+  template <NodeType PvNode>
+  inline bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value alpha, Value beta, int ply) {
+    
+    Value v = value_from_tt(tte->value(), ply);
+    
+    return
+    PvNode ?    tte->type() == VALUE_TYPE_EXACT
+    && (   tte->depth() >= depth
+        || v >= value_mate_in(PLY_MAX)
+        || v <= value_mated_in(PLY_MAX))
+    
+    :    (   tte->depth() >= depth
+          || v >= Max(VALUE_MATE_IN_PLY_MAX, beta)
+          || v <= Min(VALUE_MATED_IN_PLY_MAX, alpha))
+    && (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
+        || ((tte->type() & VALUE_TYPE_UPPER) && v <= alpha));    
+  }
+#else
   bool ok_to_use_TT(const TTEntry* tte, Depth depth, Value beta, int ply);
+#endif
   bool connected_threat(const Position& pos, Move m, Move threat);
   Value refine_eval(const TTEntry* tte, Value defaultEval, int ply);
   void update_history(const Position& pos, Move move, Depth depth, Move movesSearched[], int moveCount);
@@ -822,10 +842,14 @@ namespace {
     // At PV nodes we check for exact scores, while at non-PV nodes we check for
     // a fail high/low. Biggest advantage at probing at PV nodes is to have a
     // smooth experience in analysis mode.
+#if 1
+    if (tte && ok_to_use_TT<PvNode>(tte, depth, alpha, beta, ss->ply))
+#else
     if (   !Root
         && tte
         && (PvNode ? tte->depth() >= depth && tte->type() == VALUE_TYPE_EXACT
                    : ok_to_use_TT(tte, depth, beta, ss->ply)))
+#endif
     {
         TT.refresh(tte);
         ss->bestMove = ttMove; // Can be MOVE_NONE
@@ -1401,7 +1425,11 @@ split_point_start: // At split points actual search starts from here
     tte = TT.probe(pos.get_key());
     ttMove = (tte ? tte->move() : MOVE_NONE);
 
+#if 1
+    if (tte && ok_to_use_TT<PvNode>(tte, ttDepth, alpha, beta, ss->ply))
+#else
     if (!PvNode && tte && ok_to_use_TT(tte, ttDepth, beta, ss->ply))
+#endif
     {
         ss->bestMove = ttMove; // Can be MOVE_NONE
         return value_from_tt(tte->value(), ss->ply);
@@ -1814,6 +1842,7 @@ split_point_start: // At split points actual search starts from here
   }
 #endif
 
+#if 0
   // ok_to_use_TT() returns true if a transposition table score
   // can be used at a given point in search.
 
@@ -1828,7 +1857,7 @@ split_point_start: // At split points actual search starts from here
           && (   ((tte->type() & VALUE_TYPE_LOWER) && v >= beta)
               || ((tte->type() & VALUE_TYPE_UPPER) && v < beta));
   }
-
+#endif
 
   // refine_eval() returns the transposition table score if
   // possible otherwise falls back on static position evaluation.
