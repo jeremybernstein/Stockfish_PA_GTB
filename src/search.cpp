@@ -272,8 +272,8 @@ namespace {
     return
     PvNode ?    tte->type() == VALUE_TYPE_EXACT
     && (   tte->depth() >= depth
-        || v >= value_mate_in(PLY_MAX)
-        || v <= value_mated_in(PLY_MAX))
+        || v >= VALUE_MATE_IN_PLY_MAX
+        || v <= VALUE_MATED_IN_PLY_MAX)
     
     :    (   tte->depth() >= depth
           || v >= Max(VALUE_MATE_IN_PLY_MAX, beta)
