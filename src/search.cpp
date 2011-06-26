@@ -843,7 +843,7 @@ namespace {
     // a fail high/low. Biggest advantage at probing at PV nodes is to have a
     // smooth experience in analysis mode.
 #if 1
-    if (tte && ok_to_use_TT<PvNode>(tte, depth, alpha, beta, ss->ply))
+    if (!Root && tte && ok_to_use_TT<PvNode>(tte, depth, alpha, beta, ss->ply))
 #else
     if (   !Root
         && tte
