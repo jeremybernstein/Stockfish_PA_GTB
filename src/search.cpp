@@ -585,7 +585,7 @@ namespace {
 #endif
 
     // Iterative deepening loop until requested to stop or target depth reached
-    while (!StopRequest && ++depth <= PLY_MAX && (!Limits.maxDepth || depth <= Limits.maxDepth))
+    while (!StopRequest && ++depth <= DEPTH_MAX && (!Limits.maxDepth || depth <= Limits.maxDepth))
     {
         Rml.bestMoveChanges = 0;
         cout << set960(pos.is_chess960()) << "info depth " << depth << endl;

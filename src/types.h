@@ -159,6 +159,7 @@ typedef uint64_t Key;
 typedef uint64_t Bitboard;
 
 const int PLY_MAX = 250;
+const int DEPTH_MAX = 100;
 const int PLY_MAX_PLUS_2 = PLY_MAX + 2;
 
 enum ValueType {
