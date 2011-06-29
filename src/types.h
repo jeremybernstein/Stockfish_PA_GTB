@@ -158,7 +158,7 @@ const bool CpuIs64Bit = false;
 typedef uint64_t Key;
 typedef uint64_t Bitboard;
 
-const int PLY_MAX = 250;
+const int PLY_MAX = 254; // so that PLY_MAX_PLUS_2 is 256, nice power of two
 const int DEPTH_MAX = 100;
 const int PLY_MAX_PLUS_2 = PLY_MAX + 2;
 

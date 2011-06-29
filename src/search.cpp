@@ -624,6 +624,9 @@ namespace {
             // otherwise exit the fail high/low loop.
             if (value >= beta)
             {
+                cout << Rml[0].pv_info_to_uci(pos, depth, selDepth, alpha, beta, 0) << endl;
+                if (LogFile.is_open())
+                    LogFile << pretty_pv(pos, depth, value, current_search_time(), Rml[0].pv) << endl;
                 beta = Min(beta + aspirationDelta, VALUE_INFINITE);
                 aspirationDelta += aspirationDelta / 2;
             }
@@ -632,6 +635,9 @@ namespace {
                 AspirationFailLow = true;
                 StopOnPonderhit = false;
 
+                cout << Rml[0].pv_info_to_uci(pos, depth, selDepth, alpha, beta, 0) << endl;
+                if (LogFile.is_open())
+                    LogFile << pretty_pv(pos, depth, value, current_search_time(), Rml[0].pv) << endl;
                 alpha = Max(alpha - aspirationDelta, -VALUE_INFINITE);
                 aspirationDelta += aspirationDelta / 2;
             }
