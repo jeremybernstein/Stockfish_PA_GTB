@@ -1,4 +1,4 @@
-﻿# Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+# Stockfish, a UCI chess playing engine derived from Glaurung 2.1
 # Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
 # Copyright (C) 2008-2010 Marco Costalba, Joona Kiiski, Tord Romstad
 #
@@ -63,6 +63,7 @@ OBJS = bitboard.o pawns.o material.o endgame.o egtb.o evaluate.o main.o \
 ### 2.1. General
 debug = no
 optimize = yes
+egtb = yes
 
 ### 2.2 Architecture specific
 
@@ -246,7 +247,7 @@ ifeq ($(os),osx)
 endif
 
 ### 3.3 General linker settings
-LDFLAGS = -L. -lpthread -lgtb -static-libstdc++ -static-libgcc $(EXTRALDFLAGS)
+LDFLAGS = -L. -lpthread -static-libstdc++ -static-libgcc $(EXTRALDFLAGS)
 
 ifeq ($(os),osx)
 	LDFLAGS += -arch $(arch)
@@ -314,6 +315,12 @@ ifeq ($(popcnt),yes)
 	CXXFLAGS += -DUSE_POPCNT
 endif
 
+### 3.11 egtb
+ifeq ($(egtb),yes)
+	CXXFLAGS += -DUSE_EGTB
+	LDFLAGS += -Legtb -lgtb
+endif
+	
 ### ==========================================================================
 ### Section 4. Public targets
 ### ==========================================================================
