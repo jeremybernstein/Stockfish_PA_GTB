@@ -33,7 +33,7 @@ BINDIR = $(PREFIX)/bin
 PGOBENCH = ./$(EXE) bench 32 1 10 default depth
 
 ### Object files
-OBJS = bitboard.o pawns.o material.o endgame.o egtb.o evaluate.o main.o \
+OBJS = bitboard.o pawns.o material.o endgame.o evaluate.o main.o \
 	misc.o move.o movegen.o movepick.o search.o position.o tt.o uci.o \
 	ucioption.o book.o bitbase.o thread.o benchmark.o timeman.o
 
@@ -319,6 +319,7 @@ endif
 ifeq ($(egtb),yes)
 	CXXFLAGS += -DUSE_EGTB
 	LDFLAGS += -Legtb -lgtb
+	OBJS += egtb.o
 endif
 	
 ### ==========================================================================
