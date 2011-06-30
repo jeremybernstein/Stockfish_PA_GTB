@@ -95,9 +95,9 @@ OptionsMap::OptionsMap() {
   o["Minimum Thinking Time"] = UCIOption(20, 0, 5000);
   o["UCI_Chess960"] = UCIOption(false);
   o["UCI_AnalyseMode"] = UCIOption(false);
+#ifdef USE_EGTB
   o["UseGaviotaTb"] = UCIOption(true);
   o["ProbeOnlyAtRoot"] = UCIOption(false);
-#ifdef USE_EGTB
   o["GaviotaTbPath"] = UCIOption("C:/gtb");
   o["GaviotaTbCache"] = UCIOption(32, 4, 1024);
   StrVector schemes(5);

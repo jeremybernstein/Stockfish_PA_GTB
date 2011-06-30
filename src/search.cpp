@@ -430,9 +430,10 @@ bool think(Position& pos, const SearchLimits& limits, Move searchMoves[]) {
   // Read UCI options
   UCIMultiPV = Options["MultiPV"].value<int>();
   SkillLevel = Options["Skill Level"].value<int>();
+#ifdef USE_EGTB
   UseGaviotaTb = Options["UseGaviotaTb"].value<bool>();
   ProbeOnlyAtRoot = Options["ProbeOnlyAtRoot"].value<bool>();
-
+#endif
   read_evaluation_uci_options(pos.side_to_move());
   Threads.read_uci_options();
 
@@ -786,7 +787,10 @@ namespace {
     Depth ext, newDepth;
     ValueType vt;
     Value bestValue, value, oldAlpha;
-    Value refinedValue, nullValue, futilityBase, futilityValueScaled, tbValue; // Non-PV specific
+    Value refinedValue, nullValue, futilityBase, futilityValueScaled; // Non-PV specific
+#ifdef USE_EGTB
+    Value tbValue;
+#endif
     bool isPvMove, inCheck, singularExtensionNode, givesCheck, captureOrPromotion, dangerous, isBadCap;
     int moveCount = 0, playedMoveCount = 0;
     int threadID = pos.thread();
@@ -1385,7 +1389,10 @@ split_point_start: // At split points actual search starts from here
 
     StateInfo st;
     Move ttMove, move;
-    Value bestValue, value, evalMargin, futilityValue, futilityBase, tbValue;
+    Value bestValue, value, evalMargin, futilityValue, futilityBase;
+#if USE_EGTB
+    Value tbValue;
+#endif
     bool inCheck, enoughMaterial, givesCheck, evasionPrunable;
     const TTEntry* tte;
     Depth ttDepth;
